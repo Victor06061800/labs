@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理化催化剂 · 实验室导航</title>
+<style>
+  :root{ --purple1:#2A3F8F; --purple2:#5B4B8A; --mint:#4ECDC4; --orange:#F4A261; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:linear-gradient(160deg,#2A3F8F,#5B4B8A); color:#fff; min-height:100vh; padding:40px 18px; }
+  .wrap{ max-width:860px; margin:0 auto; }
+  h1{ font-size:30px; letter-spacing:2px; margin-bottom:6px; }
+  .slogan{ color:var(--mint); font-size:15px; margin-bottom:28px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+  .card{ background:rgba(255,255,255,.08); border:1px solid rgba(78,205,196,.35); border-radius:14px; padding:18px; text-decoration:none; color:#fff; transition:.2s; }
+  .card:hover{ background:rgba(78,205,196,.16); transform:translateY(-3px); }
+  .card .t{ font-size:17px; font-weight:bold; margin-bottom:6px; }
+  .card .d{ font-size:13px; color:#cfd3ea; line-height:1.5; }
+  .card .go{ margin-top:10px; font-size:13px; color:var(--mint); }
+  .badge{ display:inline-block; font-size:11px; padding:2px 8px; border-radius:10px; background:var(--orange); color:#2A3F8F; margin-left:6px; vertical-align:middle; }
+  .foot{ margin-top:34px; font-size:12px; color:#b9bee0; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>理化催化剂 · 仿真实验室</h1>
+  <div class="slogan">降低活化能，加速你的成长</div>
+  <div class="grid">
+    <a class="card" href="./jiasudu/">
+      <div class="t">加速度实验室<span class="badge">已上线</span></div>
+      <div class="d">第 1.4 节 速度变化的快慢<br>四场景 · Δv 计算器 · 八句辨析 · 10 题闯关</div>
+      <div class="go">进入 →</div>
+    </a>
+    <!-- 其他实验室按同样结构放到各自子目录后，复制上面这个 .card 即可 -->
+  </div>
+  <div class="foot">
+    本导航托管于 GitHub Pages，链接长期稳定，可安全嵌入公众号图文。<br>
+    更多实验室陆续迁移中。
+  </div>
+</div>
+</body>
+</html>
