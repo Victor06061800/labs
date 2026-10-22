@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>加速度实验室 · 理化催化剂</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #F4F5FB; color: #23283D; min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #2A3F8F 0%, #5B4B8A 100%);
+    color: #fff; padding: 22px 18px 18px;
+  }
+  header .brand { font-size: 12px; letter-spacing: 2px; opacity: .75; margin-bottom: 6px; }
+  header h1 { font-size: 24px; font-weight: 700; }
+  header .sub { font-size: 13px; margin-top: 6px; opacity: .85; }
+  .tabs { display: flex; background: #fff; border-bottom: 1px solid #E4E6F2; position: sticky; top: 0; z-index: 5; }
+  .tab {
+    flex: 1; text-align: center; padding: 13px 2px; font-size: 13px; font-weight: 600;
+    color: #7A7F99; border-bottom: 3px solid transparent; cursor: pointer;
+  }
+  .tab.on { color: #2A3F8F; border-bottom-color: #4ECDC4; }
+  .page { display: none; padding: 14px; max-width: 720px; margin: 0 auto; }
+  .page.on { display: block; }
+
+  .card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(42,63,143,.07); }
+  .card h3 { font-size: 15px; color: #2A3F8F; margin-bottom: 8px; }
+
+  .btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .sbtn {
+    border: 1.5px solid #C9CDE6; background: #fff; color: #43486A; border-radius: 20px;
+    padding: 8px 13px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .sbtn.on { background: #2A3F8F; border-color: #2A3F8F; color: #fff; }
+  .sbtn:disabled { opacity: .45; }
+  .go {
+    display: block; width: 100%; border: none; border-radius: 24px; padding: 13px;
+    font-size: 16px; font-weight: 700; color: #fff; cursor: pointer;
+    background: linear-gradient(135deg, #2A3F8F, #5B4B8A);
+  }
+  .go:disabled { opacity: .5; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 10px; background: #FBFBFE; }
+
+  .meters { display: flex; gap: 10px; margin: 10px 0; }
+  .meter { flex: 1; border-radius: 12px; padding: 10px; text-align: center; }
+  .meter .lbl { font-size: 11.5px; margin-bottom: 4px; }
+  .meter .val { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .meter .fx { font-size: 11px; margin-top: 3px; opacity: .85; }
+  .m-v { background: #ECEBF8; } .m-v .lbl, .m-v .val { color: #3C3489; }
+  .m-a { background: #FDF3E5; } .m-a .lbl, .m-a .val { color: #C77B2F; }
+
+  .concl { border-radius: 12px; padding: 12px; font-size: 14px; line-height: 1.75; display: none; }
+  .concl.show { display: block; }
+  .concl.good { background: #E1F5F0; color: #14655B; }
+  .concl.warn { background: #FDF3E5; color: #9A5A1D; }
+
+  input[type=text] {
+    flex: 1; border: 1.5px solid #C9CDE6; border-radius: 10px; padding: 11px; font-size: 16px; min-width: 0;
+  }
+  .inrow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .inrow label { font-size: 13.5px; color: #4A4F6E; width: 92px; flex-shrink: 0; }
+  .formula { background: #2A3F8F; color: #fff; border-radius: 10px; padding: 10px; text-align: center; font-size: 15px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .formula.alt { background: #C77B2F; }
+  .dirline { text-align: center; font-size: 13px; margin-top: 8px; color: #6B6E8F; line-height: 1.7; }
+
+  .q { display: none; }
+  .q.on { display: block; }
+  .q .stem { font-size: 15px; line-height: 1.7; margin-bottom: 12px; font-weight: 600; }
+  .opt {
+    border: 1.5px solid #D8DBEC; border-radius: 12px; padding: 12px; margin-bottom: 9px;
+    font-size: 14px; line-height: 1.5; cursor: pointer; background: #fff;
+  }
+  .opt.right { border-color: #1FA08F; background: #E1F5F0; color: #14655B; }
+  .opt.wrong { border-color: #E08A4F; background: #FDF3E5; color: #9A5A1D; }
+  .opt.dim { opacity: .5; }
+  .fb { display: none; border-radius: 10px; padding: 11px; font-size: 13.5px; line-height: 1.7; margin-top: 4px; }
+  .fb.show { display: block; }
+  .fb.right { background: #E1F5F0; color: #14655B; }
+  .fb.wrong { background: #FDF3E5; color: #9A5A1D; }
+  .navrow { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .score { font-size: 13px; color: #6B6E8F; }
+  .next { border: none; background: #4ECDC4; color: #0E4C46; font-weight: 700; border-radius: 18px; padding: 10px 22px; font-size: 14px; cursor: pointer; }
+  .next:disabled { opacity: .4; }
+  .progress { height: 6px; background: #E4E6F2; border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+  .progress i { display: block; height: 100%; background: linear-gradient(90deg,#4ECDC4,#2A3F8F); width: 0; transition: width .3s; }
+  .finish { text-align: center; padding: 20px 0; }
+  .finish .big { font-size: 40px; font-weight: 800; color: #2A3F8F; }
+  footer { text-align: center; font-size: 11.5px; color: #9BA0BC; padding: 16px 10px 26px; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">理化催化剂 · 降低活化能，加速你的成长</div>
+  <h1>加速度实验室</h1>
+  <div class="sub">沪科版 高一物理 必修一 · 第 1.4 节 速度变化的快慢 加速度</div>
+</header>
+
+<div class="tabs">
+  <div class="tab on" data-p="p1">① 对比实验台</div>
+  <div class="tab" data-p="p2">② Δv 计算器</div>
+  <div class="tab" data-p="p3">③ 八句辨析</div>
+  <div class="tab" data-p="p4">④ 闯关练习</div>
+</div>
+
+<!-- ============ 页1 对比实验台 ============ -->
+<div class="page on" id="p1">
+  <div class="card">
+    <h3>选一个场景，盯住 v 和 a 两个箭头</h3>
+    <div class="btnrow" id="scnBtns"></div>
+    <canvas id="cv" width="680" height="380"></canvas>
+    <div class="meters">
+      <div class="meter m-v">
+        <div class="lbl">速度 v</div>
+        <div class="val" id="vVal">0 m/s</div>
+        <div class="fx" id="vDir">—</div>
+      </div>
+      <div class="meter m-a">
+        <div class="lbl">加速度 a</div>
+        <div class="val" id="aVal">0 m/s²</div>
+        <div class="fx" id="aDir">—</div>
+      </div>
+    </div>
+    <button class="go" id="goBtn">▶ 开始</button>
+    <div class="concl" id="concl"></div>
+  </div>
+  <div class="card" style="font-size:13.5px;line-height:1.9;color:#4A4F6E">
+    <h3>看完这四个场景，就懂本节了</h3>
+    · <b>火箭点火</b>：速度还是 0，加速度已经很大 —— 速度为零，加速度可以不为零<br>
+    · <b>匀速飞行的飞机</b>：速度 250 m/s 很大，加速度却是 0 —— 速度大，加速度可以为零<br>
+    · <b>汽车启动</b>：加速度一直在减小，速度却一直在增大 —— a 减小 ≠ v 减小<br>
+    · <b>汽车刹车</b>：a 与 v 方向相反 → 减速 —— 判断加速减速只看方向，不看大小
+  </div>
+</div>
+
+<!-- ============ 页2 Δv 计算器 ============ -->
+<div class="page" id="p2">
+  <div class="card">
+    <h3>Δv = v₂ − v₁，注意方向相反时是"相减变相加"</h3>
+    <div class="inrow"><label>初速度 v₁</label><input type="text" id="iv1" value="6" inputmode="numeric"><span style="font-size:13px;color:#6B6E8F">m/s</span></div>
+    <div class="inrow"><label>末速度 v₂</label><input type="text" id="iv2" value="-6" inputmode="numeric"><span style="font-size:13px;color:#6B6E8F">m/s</span></div>
+    <div class="inrow"><label>时间 Δt</label><input type="text" id="idt" value="0.04" inputmode="numeric"><span style="font-size:13px;color:#6B6E8F">s</span></div>
+    <div class="dirline" style="margin-top:2px">规定<b>向右为正</b>：向右运动填正数，向左运动填负数</div>
+    <div class="formula" id="fDv">Δv = v₂ − v₁ = (−6) − 6 = −12 m/s</div>
+    <div class="formula alt" id="fA">a = Δv / Δt = −300 m/s²</div>
+    <div class="dirline" id="fTip">大小 300 m/s²，方向水平向左（负号只表方向）</div>
+  </div>
+  <div class="card">
+    <h3>三个快捷预设</h3>
+    <div class="btnrow">
+      <button class="sbtn" data-p="6,-6,0.04">钢球撞墙弹回</button>
+      <button class="sbtn" data-p="20,-15,0.1">足球击中门框</button>
+      <button class="sbtn" data-p="0,20,10">汽车加速</button>
+      <button class="sbtn" data-p="20,0,4">汽车刹车</button>
+    </div>
+    <div style="font-size:13.5px;line-height:1.9;color:#4A4F6E">
+      <b>易错提醒</b>：撞墙弹回时，学生会算成"6 − 6 = 0"。<br>
+      初速度向右（+6）、末速度向左（−6），所以 Δv = (−6) − (+6) = <b>−12 m/s</b>，<b>不是 0</b>。
+    </div>
+  </div>
+</div>
+
+<!-- ============ 页3 八句辨析 ============ -->
+<div class="page" id="p3">
+  <div class="card">
+    <h3>逐句判断：对还是错？</h3>
+    <div style="font-size:13px;color:#6B6E8F;margin-bottom:10px">八句话都要答完，最后一起给解析</div>
+    <div id="tfList"></div>
+    <div id="tfFb" class="concl"></div>
+    <button class="go" id="tfReset" style="margin-top:12px">↻ 再来一次</button>
+  </div>
+</div>
+
+<!-- ============ 页4 闯关 ============ -->
+<div class="page" id="p4">
+  <div class="card">
+    <div class="progress"><i id="pbar"></i></div>
+    <div id="qwrap"></div>
+  </div>
+  <div class="card finish" id="fin" style="display:none">
+    <div class="big" id="finScore"></div>
+    <div id="finMsg" style="font-size:14px;color:#4A4F6E;margin:8px 0 14px"></div>
+    <button class="next" id="restart">再来一轮</button>
+  </div>
+</div>
+
+<footer>
+  理化催化剂 · 高一物理同步笔记<br>
+  数据只存在你自己的手机里 · 不注册 · 不收集信息
+</footer>
+
+<script>
+/* ---------- 通用 ---------- */
+var C = {
+  purple: "#2A3F8F", purple2: "#5B4B8A", mint: "#4ECDC4", mintD: "#1FA08F",
+  orange: "#F4A261", orangeD: "#C77B2F", ink: "#23283D", gray: "#9BA0BC",
+  vcol: "#3C3489", acol: "#C77B2F"
+};
+
+document.querySelectorAll(".tab").forEach(function (t) {
+  t.addEventListener("click", function () {
+    document.querySelectorAll(".tab").forEach(function (x) { x.classList.remove("on"); });
+    document.querySelectorAll(".page").forEach(function (x) { x.classList.remove("on"); });
+    t.classList.add("on");
+    document.getElementById(t.dataset.p).classList.add("on");
+  });
+});
+
+/* ==================================================================
+   页1 对比实验台
+   ================================================================== */
+var SCNS = [
+  { name: "火箭点火升空",
+    vMax: 30, aStart: 30, aEnd: 30, vCurve: "lin",
+    note: "第 0 秒时速度还是 0，加速度已经是 30 m/s² —— 速度为零，加速度可以很大。加速度恒定不变，所以速度均匀增加。",
+    tag: "v = 0，a 最大" },
+  { name: "匀速飞行的飞机",
+    vMax: 250, aStart: 0, aEnd: 0, vCurve: "flat",
+    note: "速度高达 250 m/s，加速度却是 0 —— 因为速度没有变化。速度大，加速度可以为零。",
+    tag: "v 很大，a = 0" },
+  { name: "汽车启动（额定功率）",
+    vMax: 30, aStart: 12, aEnd: 1.8, vCurve: "ease",
+    note: "加速度从 12 一路减小到 1.8，但速度从 0 一路增大到 30 —— 加速度减小只说明「速度增加得慢了」，速度仍在增加。",
+    tag: "a 减小，v 仍增大" },
+  { name: "汽车刹车",
+    vMax: 20, aStart: -6, aEnd: -6, vCurve: "brake",
+    note: "加速度方向与速度方向相反 → 减速。加速度是负的，这里的负号只表示方向。",
+    tag: "a 与 v 反向 → 减速" }
+];
+
+var scnIdx = 0, playing = false, animId = null;
+var curV = 0, curA = 0, curPos = 0;
+
+var scnBtns = document.getElementById("scnBtns");
+SCNS.forEach(function (s, i) {
+  var b = document.createElement("button");
+  b.className = "sbtn" + (i === 0 ? " on" : "");
+  b.textContent = s.name;
+  b.addEventListener("click", function () {
+    if (playing) return;
+    scnIdx = i;
+    scnBtns.querySelectorAll(".sbtn").forEach(function (x) { x.classList.remove("on"); });
+    b.classList.add("on");
+    initScene();
+  });
+  scnBtns.appendChild(b);
+});
+
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+
+function drawArrow(x1, y, x2, color, w, head) {
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w; ctx.lineCap = "round";
+  var dir = x2 >= x1 ? 1 : -1;
+  var bx = x2 - dir * head * 0.9;
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(bx, y); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2, y);
+  ctx.lineTo(x2 - dir * head, y - head * 0.52);
+  ctx.lineTo(x2 - dir * head, y + head * 0.52);
+  ctx.closePath(); ctx.fill();
+}
+
+function renderScene() {
+  var W = 680, H = 380;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#FBFBFE"; ctx.fillRect(0, 0, W, H);
+
+  /* 轨道 */
+  var trackY = 250;
+  ctx.strokeStyle = "#E0E3F2"; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(50, trackY); ctx.lineTo(630, trackY); ctx.stroke();
+  /* 刻度 */
+  ctx.fillStyle = "#B9BEDA"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+  for (var i = 0; i <= 10; i++) {
+    var gx = 50 + i * 58;
+    ctx.fillRect(gx - 1, trackY + 6, 2, 8);
+  }
+  ctx.fillText("出发线", 50, trackY + 32);
+
+  /* 物体 */
+  var ox = 50 + curPos * 580;
+  var s = SCNS[scnIdx];
+  if (s.name.indexOf("火箭") >= 0) {
+    ctx.fillStyle = C.purple;
+    ctx.beginPath();
+    ctx.moveTo(ox, trackY - 56);
+    ctx.lineTo(ox - 13, trackY - 26);
+    ctx.lineTo(ox + 13, trackY - 26);
+    ctx.closePath(); ctx.fill();
+    ctx.fillRect(ox - 13, trackY - 26, 26, 24);
+    ctx.fillStyle = C.orange;
+    ctx.beginPath();
+    ctx.moveTo(ox, trackY - 2); ctx.lineTo(ox - 8, trackY - 20); ctx.lineTo(ox + 8, trackY - 20);
+    ctx.closePath(); ctx.fill();
+  } else {
+    ctx.fillStyle = C.purple;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(ox - 30, trackY - 40, 60, 34, 8) : ctx.rect(ox - 30, trackY - 40, 60, 34);
+    ctx.fill();
+  }
+
+  /* v 箭头（紫，物体上方） */
+  var vLen = Math.min(1, Math.abs(curV) / Math.max(1, s.vMax)) * 130;
+  var vSign = curV >= 0 ? 1 : -1;
+  var vy = trackY - 82;
+  if (vLen > 4) {
+    drawArrow(ox - vSign * vLen / 2, vy, ox + vSign * vLen / 2, C.vcol, 7, 16);
+  }
+  ctx.fillStyle = C.vcol; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "left";
+  ctx.fillText("v", ox - 96, vy + 5);
+
+  /* a 箭头（橙，物体下方） */
+  var aLen = Math.min(1, Math.abs(curA) / 30) * 130;
+  var aSign = curA >= 0 ? 1 : -1;
+  var ay = trackY + 66;
+  if (aLen > 4) {
+    drawArrow(ox - aSign * aLen / 2, ay, ox + aSign * aLen / 2, C.acol, 5, 14);
+  }
+  ctx.fillStyle = C.acol; ctx.font = "bold 14px sans-serif";
+  ctx.fillText("a", ox - 96, ay + 5);
+
+  /* 方向一致性提示 */
+  if (Math.abs(curV) > 0.4 && Math.abs(curA) > 0.4) {
+    var same = (curV > 0) === (curA > 0);
+    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = same ? C.mintD : C.orangeD;
+    ctx.fillText(same ? "同向 → 加速" : "反向 → 减速", 340, 46);
+  } else if (Math.abs(curA) < 0.4 && Math.abs(curV) > 0.4) {
+    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = C.gray;
+    ctx.fillText("a = 0 → 匀速", 340, 46);
+  }
+
+  /* 图例 */
+  ctx.font = "12.5px sans-serif"; ctx.textAlign = "left";
+  ctx.fillStyle = C.vcol; ctx.fillText("▉ 紫色 = 速度 v", 50, 28);
+  ctx.fillStyle = C.acol; ctx.fillText("▉ 橙色 = 加速度 a", 180, 28);
+}
+
+function fmtV(v) { return (Math.round(v * 10) / 10) + " m/s"; }
+function fmtA(a) { return (Math.round(a * 10) / 10) + " m/s²"; }
+
+function updMeters() {
+  var s = SCNS[scnIdx];
+  document.getElementById("vVal").textContent = fmtV(curV);
+  document.getElementById("aVal").textContent = fmtA(curA);
+  var vd = document.getElementById("vDir");
+  if (Math.abs(curV) < 0.2) vd.textContent = "速度为 0";
+  else if (Math.abs(curV) >= 0.2 && Math.abs(curA) < 0.2) vd.textContent = "方向向右 · 大小不变";
+  else vd.textContent = (curV > 0 ? "方向向右" : "方向向左");
+  var ad = document.getElementById("aDir");
+  if (Math.abs(curA) < 0.2) ad.textContent = Math.abs(curV) > 0.2 ? "a = 0（速度不变）" : "还没开始";
+  else ad.textContent = (curA > 0 ? "方向向右" : "方向向左") +
+    (Math.abs(curV) > 0.2 ? ((curV > 0) === (curA > 0) ? " · 与 v 同向" : " · 与 v 反向") : "");
+}
+
+function initScene() {
+  if (animId) cancelAnimationFrame(animId);
+  playing = false;
+  curV = 0; curA = 0; curPos = 0;
+  document.getElementById("concl").className = "concl";
+  var b = document.getElementById("goBtn");
+  b.textContent = "▶ 开始";
+  b.disabled = false;
+  updMeters();
+  renderScene();
+}
+
+document.getElementById("goBtn").addEventListener("click", function () {
+  if (playing) return;
+  playing = true;
+  this.disabled = true;
+  this.textContent = "运动中…";
+  var s = SCNS[scnIdx];
+  var t0 = null, dur = 3200, k = 1.6;
+  function step(ts) {
+    if (!t0) t0 = ts;
+    var f = Math.min(1, (ts - t0) / dur);
+    /* 位置曲线 */
+    var pos;
+    if (s.vCurve === "lin") pos = f * f;
+    else if (s.vCurve === "flat") pos = f;
+    else if (s.vCurve === "ease") pos = 1 - Math.pow(1 - f, 2);
+    else pos = f * (2 - f);
+    curPos = pos;
+    /* 速度曲线 */
+    if (s.vCurve === "lin") curV = s.vMax * f;
+    else if (s.vCurve === "flat") curV = s.vMax;
+    else if (s.vCurve === "ease") curV = s.vMax * (1 - Math.pow(1 - f, 2));
+    else curV = s.vMax * (1 - f);
+    /* 加速度曲线 */
+    if (s.vCurve === "flat") curA = 0;
+    else if (s.vCurve === "ease") curA = s.aStart + (s.aEnd - s.aStart) * f;
+    else curA = s.aStart;
+    updMeters();
+    renderScene();
+    if (f < 1) animId = requestAnimationFrame(step);
+    else {
+      playing = false;
+      document.getElementById("goBtn").disabled = false;
+      document.getElementById("goBtn").textContent = "↻ 再看一遍";
+      var el = document.getElementById("concl");
+      el.className = "concl show warn";
+      el.innerHTML = "<b>现象：</b>" + s.note +
+        "<br>终点 —— 速度 <b>" + fmtV(curV) + "</b> ｜ 加速度 <b>" + fmtA(curA) + "</b>" +
+        "<br><b>" + s.tag + "</b>";
+    }
+  }
+  animId = requestAnimationFrame(step);
+});
+
+initScene();
+
+/* ==================================================================
+   页2 Δv 计算器
+   ================================================================== */
+function calc() {
+  var v1 = parseFloat(document.getElementById("iv1").value.replace(/[^\d.\-+]/g, ""));
+  var v2 = parseFloat(document.getElementById("iv2").value.replace(/[^\d.\-+]/g, ""));
+  var dt = parseFloat(document.getElementById("idt").value.replace(/[^\d.\-+]/g, ""));
+  var fDv = document.getElementById("fDv"), fA = document.getElementById("fA"), tip = document.getElementById("fTip");
+  if (isNaN(v1) || isNaN(v2) || isNaN(dt) || dt === 0) {
+    fDv.textContent = "Δv = v₂ − v₁ = ？";
+    fA.textContent = "a = Δv / Δt = ？";
+    tip.textContent = "请填入三个数字（v₁、v₂ 带符号，Δt 不能为 0）";
+    return;
+  }
+  var dv = v2 - v1;
+  var a = dv / dt;
+  var sgn = function (x) { return (x >= 0 ? "+" : "−") + Math.abs(x); };
+  fDv.textContent = "Δv = v₂ − v₁ = (" + sgn(v2) + ") − (" + sgn(v1) + ") = " + sgn(dv) + " m/s";
+  fA.textContent = "a = Δv / Δt = " + sgn(dv) + " ÷ " + dt + " = " + sgn(a) + " m/s²";
+  var aAbs = Math.abs(Math.round(a * 100) / 100);
+  var dir = a > 0 ? "沿正方向（向右）" : (a < 0 ? "沿负方向（向左）" : "为零");
+  if (Math.abs(dv) > 1e-9 && Math.sign(dv) !== Math.sign(v1) && v1 !== 0) {
+    tip.innerHTML = "大小 <b>" + aAbs + " m/s²</b>，方向" + dir +
+      "。<b>注意</b>：末速度与初速度<b>方向相反</b>，所以 Δv 是两者大小<b>相加</b>（" +
+      Math.abs(v1) + " + " + Math.abs(v2) + " = " + Math.abs(dv) + "），不是相减。";
+  } else {
+    tip.innerHTML = "大小 <b>" + aAbs + " m/s²</b>，方向" + dir + "（负号只表方向）。";
+  }
+}
+["iv1", "iv2", "idt"].forEach(function (id) {
+  document.getElementById(id).addEventListener("input", calc);
+});
+document.querySelectorAll("#p2 .sbtn").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var p = b.dataset.p.split(",");
+    document.getElementById("iv1").value = p[0];
+    document.getElementById("iv2").value = p[1];
+    document.getElementById("idt").value = p[2];
+    document.querySelectorAll("#p2 .sbtn").forEach(function (x) { x.classList.remove("on"); });
+    b.classList.add("on");
+    calc();
+  });
+});
+calc();
+
+/* ==================================================================
+   页3 八句辨析
+   ================================================================== */
+var TFS = [
+  { t: "物体的速度大，其加速度一定大", ans: false, why: "匀速飞行的飞机速度很大，加速度却是零。速度大只说明位置变化快，与速度变化快慢无关。" },
+  { t: "物体速度变化大，其加速度一定大", ans: false, why: "列车从静止加速到高速，速度变化量很大，但用时长，加速度并不大。加速度看的是变化量与时间的比值。" },
+  { t: "物体的速度为零时，其加速度一定为零", ans: false, why: "竖直上抛到最高点的小球速度为 0，但加速度仍是 g；火箭点火瞬间速度也是 0，加速度却很大。" },
+  { t: "物体的加速度不断减小，物体的速度也不断减小", ans: false, why: "汽车启动时加速度逐渐减小，速度却一直在增大。只要 a 与 v 同向，速度就在增大，直到 a = 0 速度才达到最大。" },
+  { t: "物体的加速度不为零，物体速度一定增大", ans: false, why: "若 a 与 v 方向相反（如刹车），加速度不为零但速度在减小。判断依据是方向，不是「有没有加速度」。" },
+  { t: "速度变化越快，加速度一定越大", ans: true, why: "这正是加速度的物理意义 —— 加速度是描述速度变化快慢的物理量，速度变化越快，加速度越大。" },
+  { t: "加速度方向与规定的正方向相反时，速度一定减小", ans: false, why: "要看它与速度方向的关系，而不是与正方向的关系。如果速度也是负的，a 与 v 同向，物体反而在加速。" },
+  { t: "−10 m/s² 比 +2 m/s² 大", ans: true, why: "加速度的绝对值表示大小：|−10| = 10 > 2。负号只表示方向，不表示大小。" }
+];
+var tfAns = {};
+
+function renderTF() {
+  tfAns = {};
+  var html = "";
+  TFS.forEach(function (s, i) {
+    html += '<div style="border:1.5px solid #D8DBEC;border-radius:12px;padding:12px;margin-bottom:9px;background:#fff">' +
+      '<div style="font-size:14px;font-weight:600;margin-bottom:8px">' + (i + 1) + '. ' + s.t + '</div>' +
+      '<div style="display:flex;gap:8px">' +
+      '<button class="sbtn" data-i="' + i + '" data-pick="1">正确</button>' +
+      '<button class="sbtn" data-i="' + i + '" data-pick="0">错误</button>' +
+      '</div></div>';
+  });
+  document.getElementById("tfList").innerHTML = html;
+  document.getElementById("tfFb").className = "concl";
+  document.querySelectorAll("#tfList .sbtn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      tfAns[+b.dataset.i] = b.dataset.pick === "1";
+      var row = b.parentNode.parentNode;
+      row.querySelectorAll(".sbtn").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      checkTF();
+    });
+  });
+}
+
+function checkTF() {
+  if (Object.keys(tfAns).length < TFS.length) {
+    document.getElementById("tfFb").className = "concl";
+    return;
+  }
+  var ok = 0, msgs = [];
+  TFS.forEach(function (s, i) {
+    if (tfAns[i] === s.ans) { ok++; return; }
+    msgs.push("· 第 " + (i + 1) + " 句（" + (s.ans ? "正确" : "错误") + "）：" + s.why);
+  });
+  var fb = document.getElementById("tfFb");
+  if (ok === TFS.length) {
+    fb.className = "concl show good";
+    fb.innerHTML = "✓ 全对！ " + ok + " / " + TFS.length +
+      "<br>记住这一句就够：<b>加速度看的是速度「变化得多快」，与速度本身的大小无关。</b>判断加速还是减速，只看 a 与 v 方向是否相同。";
+  } else {
+    fb.className = "concl show warn";
+    fb.innerHTML = "答对 " + ok + " / " + TFS.length + "，需要重新想清楚的：<br>" + msgs.join("<br>");
+  }
+}
+document.getElementById("tfReset").addEventListener("click", renderTF);
+renderTF();
+
+/* ==================================================================
+   页4 闯关
+   ================================================================== */
+var QS = [
+  { stem: "下列关于加速度的说法中，正确的是（　）",
+    opts: ["加速度越大，速度变化越大", "加速度越大，速度变化越快",
+           "加速度的方向和速度方向一定相同", "物体速度不变化，而加速度可以变化很大"],
+    ans: 1,
+    why: "加速度是速度的<b>变化率</b>：加速度大 → 速度变化<b>快</b>（不是变化大）。方向与速度变化量 Δv 同向，不一定与 v 同向。速度不变则加速度必为零。" },
+  { stem: "加速度大的物体（　）",
+    opts: ["位置变化一定快", "速度一定大", "速度变化一定大", "速度变化一定快"],
+    ans: 3,
+    why: "加速度描述速度变化的快慢。位置变化快是速度大（不是加速度大）；速度大小、速度变化量都与加速度大小无必然联系。" },
+  { stem: "关于速度与加速度的关系，下列说法正确的是（　）",
+    opts: ["物体速度越小，其加速度也越小", "物体速度变化越快，加速度一定越大",
+           "物体的速度变化量越大，加速度一定越大", "物体某时刻速度为零，其加速度一定为零"],
+    ans: 1,
+    why: "B 正是加速度的物理意义。A、C 都忽略了时间因素；D 反例是竖直上抛最高点（v = 0，a = g）。" },
+  { stem: "下列情况中，加速度与速度方向<b>相同</b>的是（　）",
+    opts: ["减速上升的电梯", "制动的列车", "匀速飞行的导弹", "加速下降的电梯"],
+    ans: 3,
+    why: "加速下降：速度向下、加速度也向下，同向。A 减速上升（v 向上、a 向下，反向）；B 制动（反向）；C 匀速（a = 0）。" },
+  { stem: "关于速度、速度变化量、加速度三者的关系，正确的是（　）",
+    opts: ["速度变化量越大，加速度越大", "加速度为零时，速度也为零",
+           "加速度的方向与速度变化量的方向相同", "加速度的方向与速度的方向相同"],
+    ans: 2,
+    why: "这是加速度矢量性的核心：a 的方向由 Δv 决定，与 v 无关。减速时 a 与 v 方向相反。" },
+  { stem: "做匀加速直线运动的物体，加速度是 2 m/s²，它意味着（　）",
+    opts: ["物体在任一秒末的速度是该秒初的两倍", "物体在任一秒末的速度比该秒初的速度大 2 m/s",
+           "物体在第一秒末的速度为 2 m/s", "物体任一秒初速度比前一秒的末速度大 2 m/s"],
+    ans: 1,
+    why: "a = 2 m/s² 表示每秒速度增加 2 m/s，所以任一秒末比该秒初大 2 m/s。初速度未知，所以第一秒末的速度无法确定。" },
+  { stem: "若把物价「上涨」类比成「加速」、「下跌」类比成「减速」，则「物价下跌出现变缓趋势」可类比成（　）",
+    opts: ["速度增加，加速度增大", "速度增加，加速度减小",
+           "速度减小，加速度增大", "速度减小，加速度减小"],
+    ans: 3,
+    why: "物价对应速度：仍在下跌 → 速度减小；下跌「变缓」→ 变化率变小 → 加速度减小。这正是「加速度减小但速度仍在减小」的实例。" },
+  { stem: "足球以 20 m/s 的水平速度击中球门横梁，以 15 m/s 的速度反向水平飞出，作用时间 0.1 s。此过程中足球的加速度大小为（　）",
+    opts: ["50 m/s²", "150 m/s²", "200 m/s²", "350 m/s²"],
+    ans: 3,
+    why: "取初速度方向为正：v₁ = +20 m/s，v₂ = −15 m/s。Δv = (−15) − 20 = −35 m/s；a = −35 ÷ 0.1 = −350 m/s²，大小 <b>350 m/s²</b>。易错：把反向当成相减得 5 m/s。" },
+  { stem: "一物体做加速度不变的直线运动，某时刻速度大小为 2 m/s，2 s 后速度大小变为 10 m/s。则这 2 s 内物体的加速度大小（　）",
+    opts: ["只能是 4 m/s²", "只能是 6 m/s²", "可能是 4 m/s²，也可能是 6 m/s²", "无法确定"],
+    ans: 2,
+    why: "题目只给「速度大小」，未说明方向。同向：(10−2)÷2 = <b>4 m/s²</b>；反向：(−10−2)÷2 = −6 m/s²，大小 <b>6 m/s²</b>。两种都可能，所以选 C。" },
+  { stem: "关于 v-t 图像，下列说法正确的是（　）",
+    opts: ["图线的斜率表示位移", "图线与 t 轴围成的面积表示加速度",
+           "图线的斜率表示加速度，图线与 t 轴围成的面积表示位移", "图线越陡，速度一定越大"],
+    ans: 2,
+    why: "v-t 图：<b>斜率 = 加速度</b>，<b>面积 = 位移</b>。图线陡说明加速度大，不代表速度大（位置高低才表示速度大小）。" }
+];
+
+var qi = 0, qScore = 0, qLock = false;
+var qwrap = document.getElementById("qwrap");
+
+function renderQ() {
+  qLock = false;
+  document.getElementById("fin").style.display = "none";
+  qwrap.style.display = "block";
+  document.getElementById("pbar").style.width = (qi / QS.length * 100) + "%";
+  if (qi >= QS.length) return finish();
+  var q = QS[qi];
+  var html = '<div class="q on"><div class="stem">第 ' + (qi + 1) + ' / ' + QS.length +
+    ' 题</div><div class="stem">' + q.stem + "</div>";
+  q.opts.forEach(function (o, i) {
+    html += '<div class="opt" data-i="' + i + '">' + "ABCD"[i] + "．" + o + "</div>";
+  });
+  html += '<div class="fb" id="qfb"></div><div class="navrow"><span class="score">当前答对 <b id="scv">' +
+    qScore + '</b> 题</span><button class="next" id="qnext" disabled>下一题 →</button></div></div>';
+  qwrap.innerHTML = html;
+  qwrap.querySelectorAll(".opt").forEach(function (el) {
+    el.addEventListener("click", function () {
+      if (qLock) return;
+      qLock = true;
+      var pick = +el.dataset.i, ok = pick === q.ans;
+      qwrap.querySelectorAll(".opt").forEach(function (e2, i2) {
+        if (i2 === q.ans) e2.classList.add("right");
+        else if (i2 === pick) e2.classList.add("wrong");
+        else e2.classList.add("dim");
+      });
+      if (ok) qScore++;
+      document.getElementById("scv").textContent = qScore;
+      var fb = document.getElementById("qfb");
+      fb.className = "fb show " + (ok ? "right" : "wrong");
+      fb.innerHTML = (ok ? "✓ 答对了。" : "✗ 正确答案是 " + "ABCD"[q.ans] + "。") + "<br><b>为什么：</b>" + q.why;
+      document.getElementById("qnext").disabled = false;
+    });
+  });
+  document.getElementById("qnext").addEventListener("click", function () { qi++; renderQ(); });
+}
+
+function finish() {
+  qwrap.style.display = "none";
+  document.getElementById("pbar").style.width = "100%";
+  var f = document.getElementById("fin");
+  f.style.display = "block";
+  document.getElementById("finScore").textContent = qScore + " / " + QS.length;
+  var msg;
+  if (qScore >= 9) msg = "加速度这一节已经很稳了 —— 去把「加速度减小、速度仍在增大」讲给同桌听，讲清才是真会。";
+  else if (qScore >= 6) msg = "基础有了，回第①页把四个场景各看一遍：重点看火箭（v=0 但 a 大）和汽车启动（a 减小但 v 增大）。";
+  else msg = "别急，先回第①页看四个场景的箭头方向 —— 同向加速、反向减速，这一句先立住。";
+  document.getElementById("finMsg").textContent = msg;
+  qi = 0; qScore = 0;
+}
+document.getElementById("restart").addEventListener("click", renderQ);
+renderQ();
+</script>
+</body>
+</html>
