@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>竖直上抛实验室 · 理化催化剂</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #F4F5FB; color: #23283D; min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, #2A3F8F 0%, #5B4B8A 100%);
+    color: #fff; padding: 16px 18px 14px;
+  }
+  header .meta { font-size: 11px; letter-spacing: .5px; color: #9FE8E1; }
+  header h1 { font-size: 20px; margin-top: 3px; font-weight: 700; }
+  header p { font-size: 12px; color: #D8DCF0; margin-top: 4px; }
+
+  nav {
+    display: flex; background: #fff; border-bottom: 1px solid #E6E8F3;
+    position: sticky; top: 0; z-index: 10;
+  }
+  nav button {
+    flex: 1; min-width: 0; border: 0; background: none; padding: 12px 1px; font-size: 12.5px;
+    color: #8A90A8; font-family: inherit; cursor: pointer; position: relative;
+    white-space: nowrap;
+  }
+  nav button.on { color: #2A3F8F; font-weight: 700; }
+  nav button.on::after {
+    content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: 0; width: 26px; height: 3px; border-radius: 3px; background: #4ECDC4;
+  }
+
+  main { padding: 14px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .pane { display: none; }
+  .pane.on { display: block; }
+
+  .card {
+    background: #fff; border-radius: 14px; padding: 14px;
+    box-shadow: 0 2px 10px rgba(42,63,143,.06); margin-bottom: 12px;
+  }
+  .card h2 {
+    font-size: 14px; color: #2A3F8F; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card h2::before {
+    content: ""; width: 4px; height: 14px; border-radius: 2px; background: #4ECDC4;
+  }
+
+  #stage { width: 100%; display: block; border-radius: 10px; background: #FBFBFE; }
+
+  .ctrls { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row label { font-size: 13px; color: #5A6178; min-width: 66px; }
+  input[type=range] { flex: 1; accent-color: #4ECDC4; height: 22px; }
+  .val { font-size: 13px; font-weight: 700; color: #2A3F8F; min-width: 62px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .seg { display: flex; gap: 8px; }
+  .seg button {
+    flex: 1; padding: 8px 4px; border-radius: 9px; border: 1px solid #E0E3F0;
+    background: #F7F8FD; color: #5A6178; font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+  .seg button.on { background: #2A3F8F; border-color: #2A3F8F; color: #fff; font-weight: 700; }
+
+  .btns { display: flex; gap: 10px; margin-top: 12px; }
+  .btn {
+    flex: 1; padding: 11px; border-radius: 10px; border: 0; font-size: 14px;
+    font-family: inherit; font-weight: 700; cursor: pointer;
+  }
+  .btn.primary { background: linear-gradient(135deg,#2A3F8F,#5B4B8A); color: #fff; }
+  .btn.ghost { background: #EEF0FA; color: #2A3F8F; }
+  .btn:disabled { opacity: .45; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-top: 12px; }
+  .stat { background: #F7F8FD; border-radius: 10px; padding: 9px 10px; }
+  .stat .k { font-size: 11px; color: #8A90A8; }
+  .stat .v {
+    font-size: 17px; font-weight: 700; color: #2A3F8F; margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .v span { font-size: 11px; font-weight: 500; color: #8A90A8; margin-left: 2px; }
+
+  .hint { font-size: 12px; color: #6B7288; line-height: 1.7; margin-top: 10px; }
+  .hint b { color: #2A3F8F; }
+  .hint .mint { color: #2E9E95; font-weight: 700; }
+
+  .calcgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field label { display: block; font-size: 12px; color: #8A90A8; margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 9px 10px; border-radius: 9px; border: 1px solid #E0E3F0;
+    font-size: 15px; font-family: inherit; color: #23283D; background: #FBFBFE;
+    font-variant-numeric: tabular-nums;
+  }
+  .out { margin-top: 12px; }
+  .out .line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px dashed #EDEFF8; font-size: 13px;
+  }
+  .out .line:last-child { border: 0; }
+  .out .line span:last-child { font-weight: 700; color: #2E9E95; font-variant-numeric: tabular-nums; }
+  .out .line span:first-child { color: #5A6178; }
+
+  .judge { border: 1px solid #EDEFF8; border-radius: 11px; padding: 11px; margin-bottom: 9px; }
+  .judge p { font-size: 13px; line-height: 1.6; }
+  .judge .ops { display: flex; gap: 8px; margin-top: 9px; }
+  .judge .ops button {
+    flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #E0E3F0; background: #F7F8FD;
+    font-family: inherit; font-size: 12px; color: #5A6178; cursor: pointer;
+  }
+  .judge .fb { font-size: 12px; margin-top: 8px; line-height: 1.6; display: none; }
+  .judge.done .ops { display: none; }
+  .judge.right { border-color: #B6E9E4; background: #F2FCFB; }
+  .judge.wrong { border-color: #F6D0BE; background: #FFF7F2; }
+  .judge.done .fb { display: block; }
+  .judge.right .fb { color: #1F8079; }
+  .judge.wrong .fb { color: #B4592B; }
+
+  .q { border-bottom: 1px solid #F0F1F8; padding: 13px 0; }
+  .q:last-child { border: 0; }
+  .q .qt { font-size: 13px; line-height: 1.65; font-weight: 600; }
+  .q .opts { display: grid; gap: 7px; margin-top: 9px; }
+  .q .opt {
+    text-align: left; padding: 9px 11px; border-radius: 9px; border: 1px solid #E6E8F3;
+    background: #FBFBFE; font-family: inherit; font-size: 13px; color: #3E4459; cursor: pointer;
+    line-height: 1.5;
+  }
+  .q .opt.ok { background: #EAFBF9; border-color: #7FD8D0; color: #1F8079; font-weight: 700; }
+  .q .opt.no { background: #FFF1EA; border-color: #F3BFA6; color: #B4592B; }
+  .q .exp {
+    display: none; margin-top: 9px; font-size: 12px; line-height: 1.7;
+    color: #5A6178; background: #F7F8FD; border-radius: 9px; padding: 9px 11px;
+  }
+  .q.answered .exp { display: block; }
+
+  .score {
+    display: flex; align-items: center; gap: 10px; background: #F7F8FD;
+    border-radius: 11px; padding: 11px 13px; margin-bottom: 6px;
+  }
+  .score b { font-size: 20px; color: #2A3F8F; font-variant-numeric: tabular-nums; }
+  .score span { font-size: 12px; color: #8A90A8; }
+  .score button {
+    margin-left: auto; padding: 7px 12px; border-radius: 8px; border: 0;
+    background: #2A3F8F; color: #fff; font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+  footer { text-align: center; font-size: 11px; color: #A6ABC0; padding: 18px 0 26px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="meta">沪科版 2020 · 必修第一册 · 第 2.2 节（2）</div>
+  <h1>竖直上抛实验室</h1>
+  <p>降低活化能，加速你的成长</p>
+</header>
+
+<nav>
+  <button class="on" data-tab="lab">实验台</button>
+  <button data-tab="calc">计算器</button>
+  <button data-tab="judge">条件辨析</button>
+  <button data-tab="quiz">闯关</button>
+</nav>
+
+<main>
+  <!-- 实验台 -->
+  <section class="pane on" id="pane-lab">
+    <div class="card">
+      <h2>一次上抛（拖影 = 频闪照片）</h2>
+      <canvas id="stage" width="640" height="440"></canvas>
+      <div class="ctrls">
+        <div class="row">
+          <label>初速度 v0</label>
+          <input type="range" id="v0" min="10" max="60" step="1" value="30">
+          <div class="val"><span id="v0val">30</span> m/s</div>
+        </div>
+        <div class="row">
+          <label>重力 g</label>
+          <input type="range" id="g" min="1.6" max="15" step="0.1" value="10">
+          <div class="val"><span id="gval">10.0</span> m/s²</div>
+        </div>
+        <div class="row">
+          <label>抛出高度</label>
+          <input type="range" id="h0" min="0" max="50" step="1" value="0">
+          <div class="val"><span id="h0val">0</span> m</div>
+        </div>
+        <div class="seg" id="presets">
+          <button data-g="9.8">地球 9.8</button>
+          <button data-g="10" class="on">粗略 10</button>
+          <button data-g="1.6">月球 1.6</button>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn primary" id="play">开始上抛</button>
+        <button class="btn ghost" id="reset">重置</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">已运动时间 t</div><div class="v"><span id="st">0.00</span><span> s</span></div></div>
+        <div class="stat"><div class="k">瞬时速度 v</div><div class="v"><span id="sv">30.0</span><span> m/s</span></div></div>
+        <div class="stat"><div class="k">离地高度 h</div><div class="v"><span id="sy">0.00</span><span> m</span></div></div>
+        <div class="stat"><div class="k">最高点高度</div><div class="v"><span id="sap">45.0</span><span> m</span></div></div>
+      </div>
+      <div class="hint">
+        拖影每隔一小段相等时间记录一次 —— 靠近顶点<b>脚印密</b>（走得慢），靠近地面<b>脚印疏</b>（走得快），
+        上升与下降<b>关于顶点对称</b>。这就是「上去多慢、下来就多快」。<br>
+        <span id="theory"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 计算器 -->
+  <section class="pane" id="pane-calc">
+    <div class="card">
+      <h2>已知 v0、g、抛出高度，求全过程</h2>
+      <div class="calcgrid">
+        <div class="field"><label>初速度 v0（m/s）</label><input type="number" id="cv0" value="30" step="1"></div>
+        <div class="field"><label>重力加速度 g</label>
+          <select id="cg">
+            <option value="9.8">9.8 m/s²（标准）</option>
+            <option value="10" selected>10 m/s²（粗略）</option>
+            <option value="1.6">1.6 m/s²（月球）</option>
+          </select>
+        </div>
+        <div class="field"><label>抛出点高度 h0（m）</label><input type="number" id="ch0" value="0" step="1"></div>
+      </div>
+      <div class="out" id="cout1"></div>
+    </div>
+    <div class="card">
+      <h2>已知 v0、g，求某时刻的状态</h2>
+      <div class="calcgrid">
+        <div class="field"><label>初速度 v0（m/s）</label><input type="number" id="tv0" value="30" step="1"></div>
+        <div class="field"><label>重力加速度 g</label>
+          <select id="tg">
+            <option value="9.8">9.8 m/s²</option>
+            <option value="10" selected>10 m/s²</option>
+            <option value="1.6">1.6 m/s²</option>
+          </select>
+        </div>
+        <div class="field"><label>时刻 t（s）</label><input type="number" id="tt" value="2" step="0.1"></div>
+      </div>
+      <div class="out" id="cout2"></div>
+    </div>
+    <div class="card">
+      <div class="hint">
+        口诀：<b>t上 = v0/g，H = v0²/(2g)，往返 T = 2v0/g</b>。<br>
+        全程法取向上为正：v = v0 − gt，h = v0t − ½gt²。<b>v 变号</b>就是过顶点，<b>h 变号</b>就是落到抛出点下方。
+      </div>
+    </div>
+  </section>
+
+  <!-- 条件辨析 -->
+  <section class="pane" id="pane-judge">
+    <div class="card">
+      <h2>这句话对吗？（竖直上抛的性质）</h2>
+      <div id="judges"></div>
+      <div class="hint">
+        抓住两个「不变」：<b>加速度全程都是 g</b>（方向也对）、<b>上升与下降关于顶点对称</b>。
+        凡是说「最高点加速度为零」「上下加速度方向相反」「同一位置速度相同」的，都是错的。
+      </div>
+    </div>
+  </section>
+
+  <!-- 闯关 -->
+  <section class="pane" id="pane-quiz">
+    <div class="card">
+      <h2>10 题闯关</h2>
+      <div class="score">
+        <b id="score">0</b><span>/ 10 题答对</span>
+        <button id="again">重做</button>
+      </div>
+      <div id="quiz"></div>
+    </div>
+  </section>
+</main>
+
+<footer>理化催化剂 · 竖直上抛实验室</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 标签切换 ---------- */
+  var tabs = document.querySelectorAll("nav button");
+  tabs.forEach(function (b) {
+    b.addEventListener("click", function () {
+      tabs.forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      document.querySelectorAll(".pane").forEach(function (p) { p.classList.remove("on"); });
+      document.getElementById("pane-" + b.dataset.tab).classList.add("on");
+      if (b.dataset.tab === "lab") { resize(); }
+    });
+  });
+
+  /* ---------- 实验台 ---------- */
+  var cv = document.getElementById("stage");
+  var ctx = cv.getContext("2d");
+  var v0In = document.getElementById("v0");
+  var gIn = document.getElementById("g");
+  var h0In = document.getElementById("h0");
+  var v0val = document.getElementById("v0val");
+  var gval = document.getElementById("gval");
+  var h0val = document.getElementById("h0val");
+  var stEl = document.getElementById("st");
+  var svEl = document.getElementById("sv");
+  var syEl = document.getElementById("sy");
+  var sapEl = document.getElementById("sap");
+  var theoryEl = document.getElementById("theory");
+  var playBtn = document.getElementById("play");
+  var resetBtn = document.getElementById("reset");
+
+  var V0 = 30, G = 10, H0 = 0;
+  var t = 0, y = 0, v = 0;
+  var running = false, raf = null, lastTs = 0;
+  var ghosts = [], nextGhost = 0, GHOST_DT = 0.5;
+  var T_UP = V0 / G;
+  var APEX = H0 + V0 * V0 / (2 * G);   // 最高点离地高度
+  var T_LAND = (V0 + Math.sqrt(V0 * V0 + 2 * G * H0)) / G;
+  var HTOP = Math.max(APEX, 1);
+
+  function recompute() {
+    T_UP = V0 / G;
+    APEX = H0 + V0 * V0 / (2 * G);
+    T_LAND = (V0 + Math.sqrt(V0 * V0 + 2 * G * H0)) / G;
+    HTOP = Math.max(APEX, 1);
+    sapEl.textContent = APEX.toFixed(1);
+    var ret = 2 * T_UP;
+    theoryEl.innerHTML = "上升 t<sub>上</sub> = " + T_UP.toFixed(2) + " s ｜ 落回抛出点 " +
+      ret.toFixed(2) + " s ｜ 落到地面 " + T_LAND.toFixed(2) + " s";
+  }
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    var avail = cv.parentNode.clientWidth - 28;
+    var vw = document.documentElement.clientWidth - 56;
+    var w = Math.max(240, Math.min(avail, vw));
+    var h = Math.round(w * 0.70);
+    if (h > 480) { h = 480; }
+    cv.style.width = w + "px";
+    cv.style.height = h + "px";
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function geom() {
+    var w = cv.clientWidth || 640;
+    var h = cv.clientHeight || 440;
+    return { w: w, h: h, x: w * 0.60, top: 42, ground: h - 48 };
+  }
+
+  function yPix(yy) {
+    var gg = geom();
+    var frac = HTOP > 0 ? yy / HTOP : 0;
+    return gg.ground - (gg.ground - gg.top) * Math.min(1.05, Math.max(0, frac));
+  }
+
+  function draw() {
+    var gg = geom();
+    ctx.clearRect(0, 0, gg.w, gg.h);
+
+    // 竖向网格
+    ctx.strokeStyle = "#EEF0FA";
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= 6; i++) {
+      var py = gg.top + (gg.ground - gg.top) * i / 6;
+      ctx.beginPath();
+      ctx.moveTo(gg.w * 0.10, py);
+      ctx.lineTo(gg.w * 0.92, py);
+      ctx.stroke();
+    }
+
+    // 左侧高度标尺
+    ctx.strokeStyle = "#C9CDE0";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(gg.w * 0.12, gg.top);
+    ctx.lineTo(gg.w * 0.12, gg.ground);
+    ctx.stroke();
+
+    ctx.fillStyle = "#9AA0B6";
+    ctx.font = "11px -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+    ctx.textAlign = "right";
+    for (var k = 0; k <= 4; k++) {
+      var yy = HTOP * k / 4;
+      var py2 = yPix(yy);
+      ctx.beginPath();
+      ctx.moveTo(gg.w * 0.12 - 6, py2);
+      ctx.lineTo(gg.w * 0.12 + 6, py2);
+      ctx.strokeStyle = "#C9CDE0";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillText(yy.toFixed(0) + " m", gg.w * 0.12 - 10, py2 + 4);
+    }
+
+    // 最高点虚线
+    var yApex = yPix(APEX);
+    ctx.setLineDash([6, 5]);
+    ctx.strokeStyle = "#7FD8D0";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(gg.w * 0.20, yApex);
+    ctx.lineTo(gg.w * 0.86, yApex);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#2E9E95";
+    ctx.font = "bold 12px -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("最高点 H=" + APEX.toFixed(1) + " m", gg.w * 0.20, yApex - 7);
+
+    // 抛出点虚线（h0>0 时）
+    if (H0 > 0.3) {
+      var yL = yPix(H0);
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = "#D5D9EA";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(gg.w * 0.20, yL);
+      ctx.lineTo(gg.w * 0.86, yL);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#9AA0B6";
+      ctx.textAlign = "left";
+      ctx.fillText("抛出点", gg.w * 0.20, yL - 6);
+    }
+
+    // 地面
+    ctx.strokeStyle = "#B9BFD4";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(gg.w * 0.10, gg.ground);
+    ctx.lineTo(gg.w * 0.92, gg.ground);
+    ctx.stroke();
+
+    // 拖影
+    ghosts.forEach(function (gh) {
+      var py = yPix(gh.y);
+      ctx.beginPath();
+      ctx.arc(gg.x, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(244,162,97,0.30)";
+      ctx.fill();
+    });
+
+    // 小球
+    var by = yPix(y);
+    var grad = ctx.createLinearGradient(gg.x - 15, by - 15, gg.x + 15, by + 15);
+    grad.addColorStop(0, "#F4A261");
+    grad.addColorStop(1, "#E8813A");
+    ctx.beginPath();
+    ctx.arc(gg.x, by, 15, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(gg.x - 5, by - 5, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fill();
+
+    // 速度箭头：向上薄荷、向下橙
+    if (Math.abs(v) > 0.2) {
+      var len = Math.min(70, 16 + Math.abs(v) * 1.6);
+      var up = v > 0;
+      var col = up ? "#4ECDC4" : "#E8813A";
+      var x0 = gg.x + 34;
+      var y1 = up ? by - len : by + len;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x0, by);
+      ctx.lineTo(x0, y1);
+      ctx.stroke();
+      ctx.beginPath();
+      if (up) {
+        ctx.moveTo(x0, y1 - 7);
+        ctx.lineTo(x0 - 6, y1 + 2);
+        ctx.lineTo(x0 + 6, y1 + 2);
+      } else {
+        ctx.moveTo(x0, y1 + 7);
+        ctx.lineTo(x0 - 6, y1 - 2);
+        ctx.lineTo(x0 + 6, y1 - 2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = col;
+      ctx.fill();
+      ctx.fillStyle = up ? "#2E9E95" : "#B4592B";
+      ctx.font = "bold 12px -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(Math.abs(v).toFixed(1) + " m/s " + (up ? "↑" : "↓"), x0 + 9, by + 4);
+    }
+
+    // 右上角
+    ctx.fillStyle = "#2A3F8F";
+    ctx.font = "bold 15px -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText("t = " + t.toFixed(2) + " s", gg.w - 14, gg.top + 6);
+    ctx.fillStyle = "#9AA0B6";
+    ctx.font = "11px -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+    ctx.fillText("v0=" + V0 + "  g=" + G.toFixed(1), gg.w - 14, gg.top + 24);
+  }
+
+  function syncStats() {
+    stEl.textContent = t.toFixed(2);
+    svEl.textContent = v.toFixed(2);
+    syEl.textContent = y.toFixed(2);
+  }
+
+  function reset() {
+    running = false;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    t = 0; y = H0; v = V0; ghosts = []; nextGhost = 0;
+    playBtn.textContent = "开始上抛";
+    playBtn.disabled = false;
+    syncStats();
+    draw();
+  }
+
+  function step(ts) {
+    if (!running) { return; }
+    if (!lastTs) { lastTs = ts; }
+    var dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    if (dt > 0.05) { dt = 0.05; }
+
+    t = t + dt;
+    if (t > T_LAND) { t = T_LAND; }
+    v = V0 - G * t;
+    y = H0 + V0 * t - 0.5 * G * t * t;
+    if (y < 0) { y = 0; }
+
+    while (nextGhost <= t && nextGhost <= T_LAND) {
+      ghosts.push({ y: H0 + V0 * nextGhost - 0.5 * G * nextGhost * nextGhost });
+      nextGhost += GHOST_DT;
+    }
+
+    if (t >= T_LAND - 1e-9) {
+      running = false;
+      playBtn.textContent = "重新上抛";
+      playBtn.disabled = false;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+    }
+    syncStats();
+    draw();
+    if (running) { raf = requestAnimationFrame(step); }
+  }
+
+  function start() {
+    if (running) { return; }
+    if (t >= T_LAND - 1e-9) { reset(); }
+    running = true;
+    lastTs = 0;
+    playBtn.textContent = "运动中…";
+    playBtn.disabled = true;
+    raf = requestAnimationFrame(step);
+  }
+
+  v0In.addEventListener("input", function () {
+    V0 = parseFloat(v0In.value); v0val.textContent = V0;
+    recompute(); reset();
+  });
+  gIn.addEventListener("input", function () {
+    G = parseFloat(gIn.value); gval.textContent = G.toFixed(1);
+    document.querySelectorAll("#presets button").forEach(function (b) {
+      b.classList.toggle("on", Math.abs(parseFloat(b.dataset.g) - G) < 0.05);
+    });
+    recompute(); reset();
+  });
+  h0In.addEventListener("input", function () {
+    H0 = parseFloat(h0In.value); h0val.textContent = H0;
+    recompute(); reset();
+  });
+  document.querySelectorAll("#presets button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      G = parseFloat(b.dataset.g);
+      gIn.value = G; gval.textContent = G.toFixed(1);
+      document.querySelectorAll("#presets button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      recompute(); reset();
+    });
+  });
+  playBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  window.addEventListener("resize", resize);
+
+  /* ---------- 计算器 ---------- */
+  function fmt(x, d) {
+    if (!isFinite(x)) { return "—"; }
+    return x.toFixed(d === undefined ? 2 : d);
+  }
+  function renderCalc1() {
+    var v0 = parseFloat(document.getElementById("cv0").value);
+    var g = parseFloat(document.getElementById("cg").value);
+    var h0 = parseFloat(document.getElementById("ch0").value) || 0;
+    var box = document.getElementById("cout1");
+    if (!(v0 > 0) || !(g > 0)) { box.innerHTML = '<div class="line"><span>请输入正的 v0 与 g</span><span>—</span></div>'; return; }
+    var tu = v0 / g;
+    var H = v0 * v0 / (2 * g);
+    var apex = h0 + H;
+    var ret = 2 * tu;
+    var tl = (v0 + Math.sqrt(v0 * v0 + 2 * g * h0)) / g;
+    var vl = Math.sqrt(v0 * v0 + 2 * g * h0);
+    box.innerHTML =
+      '<div class="line"><span>上升时间 t上 = v0/g</span><span>' + fmt(tu) + ' s</span></div>' +
+      '<div class="line"><span>上抛最大高度 H = v0²/(2g)</span><span>' + fmt(H) + ' m</span></div>' +
+      '<div class="line"><span>最高点离地 h0+H</span><span>' + fmt(apex) + ' m</span></div>' +
+      '<div class="line"><span>落回抛出点总时间 2t上</span><span>' + fmt(ret) + ' s</span></div>' +
+      '<div class="line"><span>落到地面时间</span><span>' + fmt(tl) + ' s</span></div>' +
+      '<div class="line"><span>落地速度 √(v0²+2gh0)</span><span>' + fmt(vl) + ' m/s</span></div>';
+  }
+  function renderCalc2() {
+    var v0 = parseFloat(document.getElementById("tv0").value);
+    var g = parseFloat(document.getElementById("tg").value);
+    var tt = parseFloat(document.getElementById("tt").value);
+    var box = document.getElementById("cout2");
+    if (!isFinite(v0) || !isFinite(g) || !isFinite(tt)) { box.innerHTML = '<div class="line"><span>请输入数值</span><span>—</span></div>'; return; }
+    var vv = v0 - g * tt;
+    var hh = v0 * tt - 0.5 * g * tt * tt;
+    var state = vv > 0.001 ? "上升中" : (vv < -0.001 ? "下降中" : "在最高点");
+    box.innerHTML =
+      '<div class="line"><span>速度 v = v0 − gt</span><span>' + fmt(vv) + ' m/s</span></div>' +
+      '<div class="line"><span>相对抛出点位移 h = v0t − ½gt²</span><span>' + fmt(hh) + ' m</span></div>' +
+      '<div class="line"><span>此刻状态</span><span>' + state + '</span></div>';
+  }
+  ["cv0", "cg", "ch0"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", renderCalc1);
+    document.getElementById(id).addEventListener("change", renderCalc1);
+  });
+  ["tv0", "tg", "tt"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", renderCalc2);
+    document.getElementById(id).addEventListener("change", renderCalc2);
+  });
+
+  /* ---------- 条件辨析 ---------- */
+  var JUDGES = [
+    { text: "小球到达最高点时，速度为零，加速度也为零。", ans: false,
+      why: "最高点只是速度减为 0，合力仍是重力，加速度仍为 g。速度为零 ≠ 加速度为零。" },
+    { text: "竖直上抛的全过程，加速度始终是 g，方向竖直向下。", ans: true,
+      why: "只受重力，加速度恒为 g、方向不变，这是全程法的前提。" },
+    { text: "上升和下降经过同一位置时，速度相同。", ans: false,
+      why: "速率相等，但方向相反（一个向上、一个向下），所以速度不相同。" },
+    { text: "从某点上升到最高点，与从最高点落回该点，所用时间相等。", ans: true,
+      why: "时间对称：t上 = t下。这正是可以把上抛「倒着看」的依据。" },
+    { text: "上升过程是匀减速，下降过程是匀加速，两段加速度方向相反。", ans: false,
+      why: "两段加速度都是 g、都向下。上升减速、下降加速，是因为速度方向不同，不是加速度变了。" },
+    { text: "速度大小相等的两个时刻，物体一定在同一高度。", ans: true,
+      why: "由 v² − v0² = −2gh，|v| 相同 h 就相同，所以这两个时刻在同一高度（一个上升、一个下降）。" },
+    { text: "把上升过程倒过来看，就是一段自由落体。", ans: true,
+      why: "这就是逆向思维：上升的最后一秒 = 自由落体的最初一秒，位移都是 ½g·1²。" }
+  ];
+  var judgeBox = document.getElementById("judges");
+  JUDGES.forEach(function (j) {
+    var div = document.createElement("div");
+    div.className = "judge";
+    div.innerHTML = '<p>' + j.text + '</p>' +
+      '<div class="ops"><button data-v="1">对</button><button data-v="0">错</button></div>' +
+      '<div class="fb"></div>';
+    div.querySelectorAll(".ops button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var pick = b.dataset.v === "1";
+        var ok = pick === j.ans;
+        div.classList.add("done", ok ? "right" : "wrong");
+        div.querySelector(".fb").textContent =
+          (ok ? "√ 判断正确。" : "× 判断错误。") + "正确答案：" + (j.ans ? "对" : "错") + "。" + j.why;
+      });
+    });
+    judgeBox.appendChild(div);
+  });
+
+  /* ---------- 10 题闯关 ---------- */
+  var QUIZ = [
+    { q: "某物体做竖直上抛运动，在运动过程中不变的是（　）",
+      o: ["路程", "位移", "速度", "加速度"],
+      a: 3, e: "全程只受重力，加速度始终为 g，所以不变的是加速度。" },
+    { q: "以初速度 v0 竖直上抛，上升到最高点所需的时间（　）",
+      o: ["与 v0 成正比", "与 v0 成反比", "与 v0² 成正比", "与 v0 无关"],
+      a: 0, e: "t上 = v0/g，与 v0 成正比。" },
+    { q: "v0 = 20 m/s，g 取 10 m/s²，上升的最大高度是（　）",
+      o: ["10 m", "20 m", "40 m", "5 m"],
+      a: 1, e: "H = v0²/(2g) = 400/20 = 20 m。" },
+    { q: "v0 = 30 m/s，g 取 10 m/s²，落回抛出点的总时间是（　）",
+      o: ["3 s", "6 s", "9 s", "1.5 s"],
+      a: 1, e: "t上 = 3 s，往返 T = 2t上 = 6 s。" },
+    { q: "v0 = 36 m/s，g 取 10 m/s²，上升过程中最后一秒内的位移是（　）",
+      o: ["5 m", "10 m", "18 m", "36 m"],
+      a: 0, e: "逆向思维：上升最后一秒 = 自由落体最初一秒，位移 ½g·1² = 5 m。" },
+    { q: "v0 = 30 m/s，g 取 10 m/s²，从抛出算起速度大小为 10 m/s 的时刻有几个？",
+      o: ["1 个", "2 个", "3 个", "0 个"],
+      a: 1, e: "30 − 10t = ±10 → t = 2 s（上升）或 t = 4 s（下降），共 2 个。" },
+    { q: "小球到达最高点时（　）",
+      o: ["v = 0，a = 0", "v = 0，a = g", "v = g，a = 0", "速度最大"],
+      a: 1, e: "最高点速度为零，但合力仍是重力，加速度仍为 g。" },
+    { q: "上升和下降经过同一位置时，速度（　）",
+      o: ["完全相同", "大小相等、方向相反", "大小不同", "无法比较"],
+      a: 1, e: "速率对称：大小相等、方向相反。" },
+    { q: "竖直上抛运动的 v-t 图像是（　）",
+      o: ["过原点的倾斜直线", "斜率为负、穿过 t 轴的直线", "抛物线", "水平直线"],
+      a: 1, e: "v = v0 − gt，斜率为 −g，会在 t轴处穿过一次（对应最高点）。" },
+    { q: "先抛出的小球已在下落，后抛出的小球正在上升，两球（　）",
+      o: ["一定不相遇", "可能在空中相遇", "一定相遇", "只在出发点相遇"],
+      a: 1, e: "相遇只要求同一时刻在同一位置。一个下落、一个上升，仍可能在某高度相遇。" }
+  ];
+  var quizBox = document.getElementById("quiz");
+  var scoreEl = document.getElementById("score");
+  var done = {};
+  var rightCount = 0;
+
+  function buildQuiz() {
+    quizBox.innerHTML = "";
+    done = {};
+    rightCount = 0;
+    scoreEl.textContent = "0";
+    QUIZ.forEach(function (item, qi) {
+      var div = document.createElement("div");
+      div.className = "q";
+      var letters = ["A", "B", "C", "D"];
+      var opts = item.o.map(function (txt, oi) {
+        return '<button class="opt" data-q="' + qi + '" data-o="' + oi + '">' +
+          letters[oi] + "．" + txt + "</button>";
+      }).join("");
+      div.innerHTML = '<div class="qt">' + (qi + 1) + "．" + item.q + "</div>" +
+        '<div class="opts">' + opts + "</div>" +
+        '<div class="exp"><b>解析：</b>' + item.e + "</div>";
+      quizBox.appendChild(div);
+    });
+    quizBox.querySelectorAll(".opt").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var qi = parseInt(b.dataset.q, 10);
+        var oi = parseInt(b.dataset.o, 10);
+        if (done[qi]) { return; }
+        done[qi] = true;
+        var wrap = b.closest(".q");
+        wrap.classList.add("answered");
+        wrap.querySelectorAll(".opt").forEach(function (x) {
+          var xi = parseInt(x.dataset.o, 10);
+          if (xi === QUIZ[qi].a) { x.classList.add("ok"); }
+        });
+        if (oi === QUIZ[qi].a) {
+          rightCount++;
+          scoreEl.textContent = String(rightCount);
+        } else {
+          b.classList.add("no");
+        }
+      });
+    });
+  }
+  document.getElementById("again").addEventListener("click", buildQuiz);
+
+  /* ---------- 初始化 ---------- */
+  resize();
+  recompute();
+  reset();
+  renderCalc1();
+  renderCalc2();
+  buildQuiz();
+})();
+</script>
+</body>
+</html>
