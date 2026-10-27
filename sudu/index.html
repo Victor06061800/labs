@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>匀变速·速度实验室 · 理化催化剂</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #F4F5FB; color: #23283D; min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, #2A3F8F 0%, #5B4B8A 100%);
+    color: #fff; padding: 16px 18px 14px;
+  }
+  header .meta { font-size: 11px; letter-spacing: .5px; color: #9FE8E1; }
+  header h1 { font-size: 20px; margin-top: 3px; font-weight: 700; }
+  header p { font-size: 12px; color: #D8DCF0; margin-top: 4px; }
+
+  nav {
+    display: flex; background: #fff; border-bottom: 1px solid #E6E8F3;
+    position: sticky; top: 0; z-index: 10;
+  }
+  nav button {
+    flex: 1; min-width: 0; border: 0; background: none; padding: 12px 1px; font-size: 12.5px;
+    color: #8A90A8; font-family: inherit; cursor: pointer; position: relative;
+    white-space: nowrap;
+  }
+  nav button.on { color: #2A3F8F; font-weight: 700; }
+  nav button.on::after {
+    content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: 0; width: 26px; height: 3px; border-radius: 3px; background: #4ECDC4;
+  }
+
+  main { padding: 14px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .pane { display: none; }
+  .pane.on { display: block; }
+
+  .card {
+    background: #fff; border-radius: 14px; padding: 14px;
+    box-shadow: 0 2px 10px rgba(42,63,143,.06); margin-bottom: 12px;
+  }
+  .card h2 {
+    font-size: 14px; color: #2A3F8F; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card h2::before {
+    content: ""; width: 4px; height: 14px; border-radius: 2px; background: #4ECDC4;
+  }
+
+  #stage { width: 100%; display: block; border-radius: 10px; background: #FBFBFE; }
+
+  .ctrls { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row label { font-size: 13px; color: #5A6178; min-width: 70px; }
+  input[type=range] { flex: 1; accent-color: #4ECDC4; height: 22px; }
+  .val { font-size: 13px; font-weight: 700; color: #2A3F8F; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg button {
+    flex: 1; padding: 8px 4px; border-radius: 9px; border: 1px solid #E0E3F0;
+    background: #F7F8FD; color: #5A6178; font-size: 12px; font-family: inherit; cursor: pointer; min-width: 70px;
+  }
+  .seg button.on { background: #2A3F8F; border-color: #2A3F8F; color: #fff; font-weight: 700; }
+
+  .btns { display: flex; gap: 10px; margin-top: 12px; }
+  .btn {
+    flex: 1; padding: 11px; border-radius: 10px; border: 0; font-size: 14px;
+    font-family: inherit; font-weight: 700; cursor: pointer;
+  }
+  .btn.primary { background: linear-gradient(135deg,#2A3F8F,#5B4B8A); color: #fff; }
+  .btn.ghost { background: #EEF0FA; color: #2A3F8F; }
+  .btn:disabled { opacity: .45; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-top: 12px; }
+  .stat { background: #F7F8FD; border-radius: 10px; padding: 9px 10px; }
+  .stat .k { font-size: 11px; color: #8A90A8; }
+  .stat .v {
+    font-size: 17px; font-weight: 700; color: #2A3F8F; margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .v span { font-size: 11px; font-weight: 500; color: #8A90A8; margin-left: 2px; }
+
+  .hint { font-size: 12px; color: #6B7288; line-height: 1.7; margin-top: 10px; }
+  .hint b { color: #2A3F8F; }
+  .hint .mint { color: #2E9E95; font-weight: 700; }
+
+  .calcgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field label { display: block; font-size: 12px; color: #8A90A8; margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 9px 10px; border-radius: 9px; border: 1px solid #E0E3F0;
+    font-size: 15px; font-family: inherit; color: #23283D; background: #FBFBFE;
+    font-variant-numeric: tabular-nums;
+  }
+  .out { margin-top: 12px; }
+  .out .line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px dashed #EDEFF8; font-size: 13px;
+  }
+  .out .line:last-child { border: 0; }
+  .out .line span:last-child { font-weight: 700; color: #2E9E95; font-variant-numeric: tabular-nums; }
+  .out .line span:first-child { color: #5A6178; }
+
+  .judge { border: 1px solid #EDEFF8; border-radius: 11px; padding: 11px; margin-bottom: 9px; }
+  .judge p { font-size: 13px; line-height: 1.6; }
+  .judge .ops { display: flex; gap: 8px; margin-top: 9px; }
+  .judge .ops button {
+    flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #E0E3F0; background: #F7F8FD;
+    font-family: inherit; font-size: 12px; color: #5A6178; cursor: pointer;
+  }
+  .judge .fb { font-size: 12px; margin-top: 8px; line-height: 1.6; display: none; }
+  .judge.done .ops { display: none; }
+  .judge.right { border-color: #B6E9E4; background: #F2FCFB; }
+  .judge.wrong { border-color: #F6D0BE; background: #FFF7F2; }
+  .judge.done .fb { display: block; }
+  .judge.right .fb { color: #1F8079; }
+  .judge.wrong .fb { color: #B4592B; }
+
+  .q { border-bottom: 1px solid #F0F1F8; padding: 13px 0; }
+  .q:last-child { border: 0; }
+  .q .qt { font-size: 13px; line-height: 1.65; font-weight: 600; }
+  .q .opts { display: grid; gap: 7px; margin-top: 9px; }
+  .q .opt {
+    text-align: left; padding: 9px 11px; border-radius: 9px; border: 1px solid #E6E8F3;
+    background: #FBFBFE; font-family: inherit; font-size: 13px; color: #3E4459; cursor: pointer;
+    line-height: 1.5;
+  }
+  .q .opt.ok { background: #EAFBF9; border-color: #7FD8D0; color: #1F8079; font-weight: 700; }
+  .q .opt.no { background: #FFF1EA; border-color: #F3BFA6; color: #B4592B; }
+  .q .exp {
+    display: none; margin-top: 9px; font-size: 12px; line-height: 1.7;
+    color: #5A6178; background: #F7F8FD; border-radius: 9px; padding: 9px 11px;
+  }
+  .q.answered .exp { display: block; }
+
+  .score {
+    display: flex; align-items: center; gap: 10px; background: #F7F8FD;
+    border-radius: 11px; padding: 11px 13px; margin-bottom: 6px;
+  }
+  .score b { font-size: 20px; color: #2A3F8F; font-variant-numeric: tabular-nums; }
+  .score span { font-size: 12px; color: #8A90A8; }
+  .score button {
+    margin-left: auto; padding: 7px 12px; border-radius: 8px; border: 0;
+    background: #2A3F8F; color: #fff; font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+  footer { text-align: center; font-size: 11px; color: #A6ABC0; padding: 18px 0 26px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="meta">沪科版 2020 · 必修第一册 · 第 2.3 节（1）</div>
+  <h1>匀变速 · 速度实验室</h1>
+  <p>降低活化能，加速你的成长</p>
+</header>
+
+<nav>
+  <button class="on" data-tab="lab">实验台</button>
+  <button data-tab="calc">计算器</button>
+  <button data-tab="judge">条件辨析</button>
+  <button data-tab="quiz">闯关</button>
+</nav>
+
+<main>
+  <!-- 实验台 / v-t 图像 -->
+  <section class="pane on" id="pane-lab">
+    <div class="card">
+      <h2>运动轨迹 + 实时 v-t 图像（面积 = 位移）</h2>
+      <canvas id="stage" width="640" height="470"></canvas>
+      <div class="ctrls">
+        <div class="row">
+          <label>初速度 v0</label>
+          <input type="range" id="v0" min="-20" max="20" step="1" value="5">
+          <div class="val"><span id="v0val">5</span> m/s</div>
+        </div>
+        <div class="row">
+          <label>加速度 a</label>
+          <input type="range" id="a" min="-10" max="10" step="0.5" value="2">
+          <div class="val"><span id="aval">2.0</span> m/s²</div>
+        </div>
+        <div class="seg" id="presets">
+          <button data-v="5" data-a="2">匀加速 a=2</button>
+          <button data-v="12" data-a="-2">匀减速 a=-2</button>
+          <button data-v="8" data-a="0" class="on">匀速 a=0</button>
+          <button data-v="20" data-a="-4">刹车 a=-4</button>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn primary" id="play">开始</button>
+        <button class="btn ghost" id="reset">重置</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">已运动时间 t</div><div class="v"><span id="st">0.00</span><span> s</span></div></div>
+        <div class="stat"><div class="k">瞬时速度 v</div><div class="v"><span id="sv">5.0</span><span> m/s</span></div></div>
+        <div class="stat"><div class="k">位移 x（面积）</div><div class="v"><span id="sx">0.00</span><span> m</span></div></div>
+        <div class="stat"><div class="k">状态</div><div class="v"><span id="sstate">正向运动</span></div></div>
+      </div>
+      <div class="hint">
+        上方小球沿轨道移动，位置 = 速度随时间的<b>积累</b>（位移）；下方 v-t 图的<b>直线斜率 = a</b>，
+        <b>纵截距 = v0</b>，<span class="mint">涂色面积 = 位移</span>。<br>
+        <span id="theory"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 计算器 -->
+  <section class="pane" id="pane-calc">
+    <div class="card">
+      <h2>已知 v0、a、t，求末速度与位移</h2>
+      <div class="calcgrid">
+        <div class="field"><label>初速度 v0（m/s）</label><input type="number" id="cv0" value="5" step="1"></div>
+        <div class="field"><label>加速度 a（m/s²）</label><input type="number" id="ca" value="2" step="0.5"></div>
+        <div class="field"><label>时间 t（s）</label><input type="number" id="ct" value="4" step="0.1"></div>
+      </div>
+      <div class="out" id="cout1"></div>
+    </div>
+    <div class="card">
+      <h2>已知 v0、a、末速度 v，求时间与位移</h2>
+      <div class="calcgrid">
+        <div class="field"><label>初速度 v0（m/s）</label><input type="number" id="dv0" value="5" step="1"></div>
+        <div class="field"><label>加速度 a（m/s²）</label><input type="number" id="da" value="2" step="0.5"></div>
+        <div class="field"><label>末速度 v（m/s）</label><input type="number" id="dv" value="13" step="0.5"></div>
+      </div>
+      <div class="out" id="cout2"></div>
+    </div>
+    <div class="card">
+      <h2>刹车专项：先判停，再算速度</h2>
+      <div class="calcgrid">
+        <div class="field"><label>初速度 v0（m/s）</label><input type="number" id="bv0" value="20" step="1"></div>
+        <div class="field"><label>加速度 a（m/s²，负）</label><input type="number" id="ba" value="-4" step="0.5"></div>
+        <div class="field"><label>询问时刻 t（s）</label><input type="number" id="bt" value="6" step="0.1"></div>
+      </div>
+      <div class="out" id="cout3"></div>
+    </div>
+    <div class="card">
+      <div class="hint">
+        口诀：<b>v = v0 + at，x = v0t + ½at²</b>。<br>
+        刹车先算<b>停止时间 t0 = v0/|a|</b>；若 t > t0，则速度已为 0，不能硬代 t。
+      </div>
+    </div>
+  </section>
+
+  <!-- 条件辨析 -->
+  <section class="pane" id="pane-judge">
+    <div class="card">
+      <h2>这句话对吗？（速度规律的坑）</h2>
+      <div id="judges"></div>
+      <div class="hint">
+        抓住三点：<b>① 匀变速的 a 恒定</b>（匀减速只是 a 与 v 反向，不是 a 变小）；
+        <b>② v-t 斜率 = 加速度、面积 = 位移</b>；<b>③ 刹车先判停</b>。
+        凡是说「加速度为负就减速」「面积就是路程」「直接代 t」的，都要小心。
+      </div>
+    </div>
+  </section>
+
+  <!-- 闯关 -->
+  <section class="pane" id="pane-quiz">
+    <div class="card">
+      <h2>10 题闯关</h2>
+      <div class="score">
+        <b id="score">0</b><span>/ 10 题答对</span>
+        <button id="again">重做</button>
+      </div>
+      <div id="quiz"></div>
+    </div>
+  </section>
+</main>
+
+<footer>理化催化剂 · 匀变速 · 速度实验室</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 标签切换 ---------- */
+  var tabs = document.querySelectorAll("nav button");
+  tabs.forEach(function (b) {
+    b.addEventListener("click", function () {
+      tabs.forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      document.querySelectorAll(".pane").forEach(function (p) { p.classList.remove("on"); });
+      document.getElementById("pane-" + b.dataset.tab).classList.add("on");
+      if (b.dataset.tab === "lab") { resize(); }
+    });
+  });
+
+  /* ---------- 实验台 ---------- */
+  var cv = document.getElementById("stage");
+  var ctx = cv.getContext("2d");
+  var v0In = document.getElementById("v0");
+  var aIn = document.getElementById("a");
+  var v0val = document.getElementById("v0val");
+  var aval = document.getElementById("aval");
+  var stEl = document.getElementById("st");
+  var svEl = document.getElementById("sv");
+  var sxEl = document.getElementById("sx");
+  var sstateEl = document.getElementById("sstate");
+  var theoryEl = document.getElementById("theory");
+  var playBtn = document.getElementById("play");
+  var resetBtn = document.getElementById("reset");
+
+  var V0 = 5, A = 2;
+  var t = 0, v = 5, x = 0;
+  var running = false, raf = null, lastTs = 0;
+  var T_WIND = 10, STOP_T = Infinity, X_STOP = 0, X_MIN = 0, X_MAX = 1;
+
+  function recompute() {
+    STOP_T = Infinity; X_STOP = 0;
+    if (A < -0.01 && V0 > 0) {
+      STOP_T = V0 / (-A);
+      X_STOP = V0 * STOP_T + 0.5 * A * STOP_T * STOP_T;
+      T_WIND = Math.min(12, STOP_T + 1);
+    } else if (Math.abs(A) < 0.01) {
+      T_WIND = 10;
+    } else {
+      T_WIND = 10;
+    }
+    // 位移范围（用于轨道映射）
+    var xs = [0];
+    var n = 40;
+    for (var i = 0; i <= n; i++) {
+      var tt = T_WIND * i / n;
+      var xx;
+      if (A < -0.01 && V0 > 0 && tt >= STOP_T) { xx = X_STOP; }
+      else { xx = V0 * tt + 0.5 * A * tt * tt; }
+      xs.push(xx);
+    }
+    X_MIN = Math.min.apply(null, xs);
+    X_MAX = Math.max.apply(null, xs);
+    if (X_MAX - X_MIN < 1) { X_MAX = X_MIN + 1; }
+    theoryEl.innerHTML = "演示时长 " + T_WIND.toFixed(1) + " s" +
+      (isFinite(STOP_T) ? " ｜ 刹车停止 t0 = " + STOP_T.toFixed(2) + " s" : "");
+  }
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    var avail = cv.parentNode.clientWidth - 28;
+    var vw = document.documentElement.clientWidth - 56;
+    var w = Math.max(240, Math.min(avail, vw));
+    var h = Math.round(w * 0.734);
+    if (h > 500) { h = 500; }
+    cv.style.width = w + "px";
+    cv.style.height = h + "px";
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function geom() {
+    var w = cv.clientWidth || 640;
+    var h = cv.clientHeight || 470;
+    return { w: w, h: h };
+  }
+
+  // 轨道区：y ≈ h*0.16；v-t 区：x轴 y ≈ h*0.88，y轴 x ≈ w*0.14
+  function draw() {
+    var g = geom();
+    var w = g.w, h = g.h;
+    ctx.clearRect(0, 0, w, h);
+
+    var trackY = h * 0.16;
+    var plotTop = h * 0.30, plotBot = h * 0.88;
+    var x0 = w * 0.14, x1 = w * 0.93;
+    var tAxis = plotBot;
+
+    // ---- 顶部标题 ----
+    ctx.fillStyle = "#2A3F8F";
+    ctx.font = "bold 13px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("① 运动轨迹（位置 = 速度的积累）", w * 0.06, h * 0.07);
+
+    // ---- 轨道 ----
+    ctx.strokeStyle = "#C9CDE0"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(w * 0.10, trackY); ctx.lineTo(w * 0.95, trackY); ctx.stroke();
+    // 位移映射
+    function xPix(xx) {
+      var frac = (xx - X_MIN) / (X_MAX - X_MIN);
+      return w * 0.12 + frac * (w * 0.80);
+    }
+    // 已走过轨迹（淡色）
+    ctx.strokeStyle = "#7FD8D0"; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(xPix(0), trackY);
+    ctx.lineTo(xPix(x), trackY);
+    ctx.stroke();
+    // 小球
+    var bx = xPix(x);
+    var grad = ctx.createLinearGradient(bx - 14, trackY - 14, bx + 14, trackY + 14);
+    grad.addColorStop(0, "#F4A261"); grad.addColorStop(1, "#E8813A");
+    ctx.beginPath(); ctx.arc(bx, trackY, 13, 0, Math.PI * 2);
+    ctx.fillStyle = grad; ctx.fill();
+    // 速度箭头（长度 ∝ |v|，方向 ∝ 符号）
+    if (Math.abs(v) > 0.05) {
+      var len = Math.min(60, 10 + Math.abs(v) * 2.2);
+      var dir = v > 0 ? 1 : -1;
+      var ax = bx + dir * 16, ay = trackY - 26;
+      ctx.strokeStyle = v > 0 ? "#4ECDC4" : "#E8813A"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + dir * len, ay); ctx.stroke();
+      ctx.beginPath();
+      if (dir > 0) { ctx.moveTo(ax + dir * len + 2, ay - 6); ctx.lineTo(ax + dir * len - 8, ay); ctx.lineTo(ax + dir * len + 2, ay + 6); }
+      else { ctx.moveTo(ax + dir * len - 2, ay - 6); ctx.lineTo(ax + dir * len + 8, ay); ctx.lineTo(ax + dir * len - 2, ay + 6); }
+      ctx.closePath(); ctx.fillStyle = v > 0 ? "#4ECDC4" : "#E8813A"; ctx.fill();
+      ctx.fillStyle = v > 0 ? "#2E9E95" : "#B4592B";
+      ctx.font = "bold 11px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("v=" + v.toFixed(1), bx, trackY + 30);
+    }
+
+    // ---- v-t 区标题 ----
+    ctx.fillStyle = "#2A3F8F";
+    ctx.font = "bold 13px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("② v - t 图像（斜率 = a，面积 = 位移）", w * 0.06, plotTop - 12);
+
+    // 计算 v 范围
+    var vm = Math.max(Math.abs(V0), Math.abs(V0 + A * T_WIND));
+    vm = Math.max(vm, 1) * 1.15;
+    var vTop = vm, vBot = -vm;
+    function vPix(vv) {
+      var frac = (vv - vBot) / (vTop - vBot);
+      return plotBot - frac * (plotBot - plotTop);
+    }
+    // 网格 + 轴
+    ctx.strokeStyle = "#EEF0FA"; ctx.lineWidth = 1;
+    for (var gi = 0; gi <= 4; gi++) {
+      var gy = plotTop + (plotBot - plotTop) * gi / 4;
+      ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke();
+    }
+    ctx.strokeStyle = "#C9CDE0"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0, plotTop - 6); ctx.lineTo(x0, plotBot); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x0, tAxis); ctx.lineTo(x1, tAxis); ctx.stroke();
+    // 轴标
+    ctx.fillStyle = "#9AA0B6";
+    ctx.font = "11px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+    ctx.textAlign = "right"; ctx.fillText("v", x0 - 6, plotTop);
+    ctx.textAlign = "left"; ctx.fillText("t", x1 + 4, tAxis + 16);
+    ctx.textAlign = "right"; ctx.fillText("0", x0 - 6, tAxis + 4);
+
+    // 整条理论线（淡）
+    ctx.strokeStyle = "#C9CDE0"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    for (var i = 0; i <= 60; i++) {
+      var tt2 = T_WIND * i / 60;
+      var xx2 = x0 + (x1 - x0) * i / 60;
+      var vv2 = V0 + A * tt2;
+      var yy2 = vPix(Math.max(vBot, Math.min(vTop, vv2)));
+      if (i === 0) { ctx.moveTo(xx2, yy2); } else { ctx.lineTo(xx2, yy2); }
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // 已走区域（面积 = 位移）填充
+    ctx.beginPath();
+    ctx.moveTo(x0, tAxis);
+    var stepsFilled = Math.max(1, Math.floor(t / T_WIND * 60));
+    for (var k = 0; k <= stepsFilled; k++) {
+      var tt3 = T_WIND * k / 60;
+      var vv3, xx3 = x0 + (x1 - x0) * k / 60;
+      if (A < -0.01 && V0 > 0 && tt3 >= STOP_T) { vv3 = 0; }
+      else { vv3 = V0 + A * tt3; }
+      var yy3 = vPix(Math.max(vBot, Math.min(vTop, vv3)));
+      ctx.lineTo(xx3, yy3);
+    }
+    ctx.lineTo(x0 + (x1 - x0) * Math.min(1, t / T_WIND), tAxis);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(78,205,196,0.28)";
+    ctx.fill();
+
+    // 实线（已走部分）
+    ctx.strokeStyle = "#2E9E95"; ctx.lineWidth = 3;
+    ctx.beginPath();
+    var started = false;
+    for (var m = 0; m <= 60; m++) {
+      var tt4 = T_WIND * m / 60;
+      if (tt4 > t) { break; }
+      var xx4 = x0 + (x1 - x0) * m / 60;
+      var vv4 = (A < -0.01 && V0 > 0 && tt4 >= STOP_T) ? 0 : (V0 + A * tt4);
+      var yy4 = vPix(Math.max(vBot, Math.min(vTop, vv4)));
+      if (!started) { ctx.moveTo(xx4, yy4); started = true; } else { ctx.lineTo(xx4, yy4); }
+    }
+    ctx.stroke();
+
+    // 当前点
+    var curx = x0 + (x1 - x0) * Math.min(1, t / T_WIND);
+    var curv = (A < -0.01 && V0 > 0 && t >= STOP_T) ? 0 : (V0 + A * t);
+    var cury = vPix(Math.max(vBot, Math.min(vTop, curv)));
+    ctx.beginPath(); ctx.arc(curx, cury, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#2A3F8F"; ctx.fill();
+
+    // 停止竖线
+    if (isFinite(STOP_T)) {
+      var sx = x0 + (x1 - x0) * (STOP_T / T_WIND);
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = "#E8813A"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(sx, plotTop); ctx.lineTo(sx, plotBot); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#B4592B"; ctx.textAlign = "center";
+      ctx.fillText("t0", sx, plotTop - 4);
+    }
+  }
+
+  function syncStats() {
+    stEl.textContent = t.toFixed(2);
+    svEl.textContent = v.toFixed(2);
+    sxEl.textContent = x.toFixed(2);
+    var state;
+    if (A < -0.01 && V0 > 0 && t >= STOP_T) { state = "已停止"; }
+    else if (v > 0.05) { state = "正向运动"; }
+    else if (v < -0.05) { state = "反向运动"; }
+    else { state = "瞬时静止"; }
+    sstateEl.textContent = state;
+  }
+
+  function reset() {
+    running = false;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    t = 0; v = V0; x = 0;
+    playBtn.textContent = "开始"; playBtn.disabled = false;
+    syncStats(); draw();
+  }
+
+  function step(ts) {
+    if (!running) { return; }
+    if (!lastTs) { lastTs = ts; }
+    var dt = (ts - lastTs) / 1000; lastTs = ts;
+    if (dt > 0.05) { dt = 0.05; }
+    t = t + dt;
+    if (t > T_WIND) { t = T_WIND; }
+    if (A < -0.01 && V0 > 0 && t >= STOP_T) { v = 0; x = X_STOP; }
+    else { v = V0 + A * t; x = V0 * t + 0.5 * A * t * t; }
+    if (t >= T_WIND - 1e-9) {
+      running = false; playBtn.textContent = "重新播放"; playBtn.disabled = false;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+    }
+    syncStats(); draw();
+    if (running) { raf = requestAnimationFrame(step); }
+  }
+
+  function start() {
+    if (running) { return; }
+    if (t >= T_WIND - 1e-9) { reset(); }
+    running = true; lastTs = 0;
+    playBtn.textContent = "运动中…"; playBtn.disabled = true;
+    raf = requestAnimationFrame(step);
+  }
+
+  function onParam() {
+    V0 = parseFloat(v0In.value); v0val.textContent = V0;
+    A = parseFloat(aIn.value); aval.textContent = A.toFixed(1);
+    document.querySelectorAll("#presets button").forEach(function (b) {
+      b.classList.toggle("on", Math.abs(parseFloat(b.dataset.a) - A) < 0.05 && Math.abs(parseFloat(b.dataset.v) - V0) < 0.05);
+    });
+    recompute(); reset();
+  }
+  v0In.addEventListener("input", onParam);
+  aIn.addEventListener("input", onParam);
+  document.querySelectorAll("#presets button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      V0 = parseFloat(b.dataset.v); A = parseFloat(b.dataset.a);
+      v0In.value = V0; aIn.value = A; v0val.textContent = V0; aval.textContent = A.toFixed(1);
+      document.querySelectorAll("#presets button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      recompute(); reset();
+    });
+  });
+  playBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  window.addEventListener("resize", resize);
+
+  /* ---------- 计算器 ---------- */
+  function fmt(x, d) {
+    if (!isFinite(x)) { return "—"; }
+    return x.toFixed(d === undefined ? 2 : d);
+  }
+  function renderCalc1() {
+    var v0 = parseFloat(document.getElementById("cv0").value);
+    var a = parseFloat(document.getElementById("ca").value);
+    var tt = parseFloat(document.getElementById("ct").value);
+    var box = document.getElementById("cout1");
+    if (!(isFinite(v0) && isFinite(a) && isFinite(tt))) { box.innerHTML = '<div class="line"><span>请输入数值</span><span>—</span></div>'; return; }
+    var vv = v0 + a * tt;
+    var xx = v0 * tt + 0.5 * a * tt * tt;
+    box.innerHTML =
+      '<div class="line"><span>末速度 v = v0 + at</span><span>' + fmt(vv) + ' m/s</span></div>' +
+      '<div class="line"><span>位移 x = v0t + ½at²</span><span>' + fmt(xx) + ' m</span></div>';
+  }
+  function renderCalc2() {
+    var v0 = parseFloat(document.getElementById("dv0").value);
+    var a = parseFloat(document.getElementById("da").value);
+    var vv = parseFloat(document.getElementById("dv").value);
+    var box = document.getElementById("cout2");
+    if (!(isFinite(v0) && isFinite(a) && isFinite(vv))) { box.innerHTML = '<div class="line"><span>请输入数值</span><span>—</span></div>'; return; }
+    var tt = (vv - v0) / a;
+    var xx = (vv * vv - v0 * v0) / (2 * a);
+    box.innerHTML =
+      '<div class="line"><span>时间 t = (v − v0)/a</span><span>' + fmt(tt) + ' s</span></div>' +
+      '<div class="line"><span>位移 x = (v² − v0²)/(2a)</span><span>' + fmt(xx) + ' m</span></div>';
+  }
+  function renderCalc3() {
+    var v0 = parseFloat(document.getElementById("bv0").value);
+    var a = parseFloat(document.getElementById("ba").value);
+    var tt = parseFloat(document.getElementById("bt").value);
+    var box = document.getElementById("cout3");
+    if (!(isFinite(v0) && isFinite(a) && isFinite(tt))) { box.innerHTML = '<div class="line"><span>请输入数值</span><span>—</span></div>'; return; }
+    var t0 = (a < 0) ? v0 / (-a) : Infinity;
+    var vv, note;
+    if (isFinite(t0) && tt > t0) { vv = 0; note = "（t > 停止时间 t0=" + fmt(t0) + " s，车已停）"; }
+    else { vv = v0 + a * tt; note = ""; }
+    box.innerHTML =
+      '<div class="line"><span>停止时间 t0 = v0/|a|</span><span>' + (isFinite(t0) ? fmt(t0) : "—") + ' s</span></div>' +
+      '<div class="line"><span>' + tt + ' s 末速度 v = v0 + at</span><span>' + fmt(vv) + ' m/s</span></div>' +
+      (note ? '<div class="line"><span>提示</span><span style="color:#B4592B">' + note + '</span></div>' : '');
+  }
+  ["cv0", "ca", "ct"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", renderCalc1);
+    document.getElementById(id).addEventListener("change", renderCalc1);
+  });
+  ["dv0", "da", "dv"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", renderCalc2);
+    document.getElementById(id).addEventListener("change", renderCalc2);
+  });
+  ["bv0", "ba", "bt"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", renderCalc3);
+    document.getElementById(id).addEventListener("change", renderCalc3);
+  });
+
+  /* ---------- 条件辨析 ---------- */
+  var JUDGES = [
+    { text: "匀减速直线运动的加速度一定在逐渐减小。", ans: false,
+      why: "匀减速只要求 a 与 v 反向，a 的大小仍然恒定。把「速度减小」误当成「加速度减小」是典型错误。" },
+    { text: "取 v0 方向为正方向时，匀减速直线运动的加速度 a < 0。", ans: true,
+      why: "a 与 v 反向，按约定 v0 为正，所以 a 为负。正负只表方向，不表大小。" },
+    { text: "v-t 图像的斜率表示加速度，纵轴截距表示初速度。", ans: true,
+      why: "斜率 = Δv/Δt = a，纵截距 = t=0 时的速度 = v0。这是 v-t 图最重要的两条结论。" },
+    { text: "v-t 图线与时间轴围成的面积表示物体走过的路程。", ans: false,
+      why: "面积是位移（矢量）：轴上方正、轴下方负。只有单向运动，位移大小才等于路程。" },
+    { text: "汽车刹车后，只要把任意时刻 t 代入 v = v0 + at 就能算出速度。", ans: false,
+      why: "刹车停后不再运动，要先算停止时间 t0 = v0/|a|；t > t0 时 v = 0，不能硬代 t（会得到负的伪速度）。" },
+    { text: "由静止开始的匀加速直线运动，速度大小与时间成正比。", ans: true,
+      why: "v0 = 0 时 v = at，v 与 t 成正比。这正是「v ∝ t」的特例。" },
+    { text: "加速度为负，物体一定在做减速运动。", ans: false,
+      why: "减速要看 a 与 v 是否反向。若 v 也为负（同为负），加速度为负反而是加速。" }
+  ];
+  var judgeBox = document.getElementById("judges");
+  JUDGES.forEach(function (j) {
+    var div = document.createElement("div");
+    div.className = "judge";
+    div.innerHTML = '<p>' + j.text + '</p>' +
+      '<div class="ops"><button data-v="1">对</button><button data-v="0">错</button></div>' +
+      '<div class="fb"></div>';
+    div.querySelectorAll(".ops button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var pick = b.dataset.v === "1";
+        var ok = pick === j.ans;
+        div.classList.add("done", ok ? "right" : "wrong");
+        div.querySelector(".fb").textContent =
+          (ok ? "√ 判断正确。" : "× 判断错误。") + "正确答案：" + (j.ans ? "对" : "错") + "。" + j.why;
+      });
+    });
+    judgeBox.appendChild(div);
+  });
+
+  /* ---------- 10 题闯关 ---------- */
+  var QUIZ = [
+    { q: "物体做匀加速直线运动，在任意相等时间内（　）",
+      o: ["速度变化量逐渐增大", "加速度越来越大", "速度变化量保持不变", "位移保持不变"],
+      a: 2, e: "a 恒定，Δv = a·Δt，所以相等时间内速度变化量不变。" },
+    { q: "某物体由静止开始做匀加速直线运动，3 s 末速度为 15 m/s，其加速度为（　）",
+      o: ["1 m/s²", "3 m/s²", "5 m/s²", "15 m/s²"],
+      a: 2, e: "v0=0，a = v/t = 15/3 = 5 m/s²。" },
+    { q: "物体由静止开始运动，第 7 s 初的速度是 2.6 m/s，则加速度约为（　）",
+      o: ["0.43 m/s²", "0.37 m/s²", "2.6 m/s²", "0.46 m/s²"],
+      a: 0, e: "第 7 s 初 = 第 6 s 末，a = 2.6/6 ≈ 0.43 m/s²。" },
+    { q: "加速度为 2 m/s² 的匀加速运动，在任意 1 s 内（　）",
+      o: ["末速度比初速度大 1 m/s", "末速度比初速度大 2 m/s", "末速度比初速度大 4 m/s", "速度不变"],
+      a: 1, e: "Δv = a·Δt = 2×1 = 2 m/s，任意 1 s 内末速度都比该秒初大 2 m/s。" },
+    { q: "在 v-t 图像中，图线的斜率表示（　）",
+      o: ["速度", "加速度", "位移", "时间"],
+      a: 1, e: "斜率 = Δv/Δt = a。" },
+    { q: "匀速直线运动的 v-t 图像是（　）",
+      o: ["倾斜直线", "平行于时间轴的直线", "抛物线", "曲线"],
+      a: 1, e: "匀速时 v 不变，图像是水平直线，斜率为 0（a=0）。" },
+    { q: "汽车以 28 m/s 行驶，以 4 m/s² 刹车，8 s 末的速度为（　）",
+      o: ["−4 m/s", "4 m/s", "12 m/s", "0"],
+      a: 3, e: "停止时间 t0 = 28/4 = 7 s，8 s > 7 s，车已停，v = 0。" },
+    { q: "一质点速度表达式为 v = 5 + 4t（SI），其初速度与 4 s 末速度分别为（　）",
+      o: ["5 m/s，17 m/s", "5 m/s，21 m/s", "4 m/s，17 m/s", "4 m/s，21 m/s"],
+      a: 1, e: "对比 v = v0 + at：v0 = 5 m/s，a = 4 m/s²；4 s 末 v = 5 + 16 = 21 m/s。" },
+    { q: "由静止开始的匀加速直线运动，速度大小与时间的关系是（　）",
+      o: ["成正比", "成反比", "与 t² 成正比", "无关"],
+      a: 0, e: "v0 = 0 时 v = at，v 与 t 成正比。" },
+    { q: "加速度为负，物体就一定做减速运动吗？（　）",
+      o: ["一定", "不一定", "一定不", "无法判断"],
+      a: 1, e: "不一定。若速度也为负（a、v 同为负），加速度为负反而是加速。减速要看 a、v 是否反向。" }
+  ];
+  var quizBox = document.getElementById("quiz");
+  var scoreEl = document.getElementById("score");
+  var done = {};
+  var rightCount = 0;
+
+  function buildQuiz() {
+    quizBox.innerHTML = "";
+    done = {}; rightCount = 0; scoreEl.textContent = "0";
+    QUIZ.forEach(function (item, qi) {
+      var div = document.createElement("div");
+      div.className = "q";
+      var letters = ["A", "B", "C", "D"];
+      var opts = item.o.map(function (txt, oi) {
+        return '<button class="opt" data-q="' + qi + '" data-o="' + oi + '">' +
+          letters[oi] + "．" + txt + "</button>";
+      }).join("");
+      div.innerHTML = '<div class="qt">' + (qi + 1) + "．" + item.q + "</div>" +
+        '<div class="opts">' + opts + "</div>" +
+        '<div class="exp"><b>解析：</b>' + item.e + "</div>";
+      quizBox.appendChild(div);
+    });
+    quizBox.querySelectorAll(".opt").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var qi = parseInt(b.dataset.q, 10);
+        var oi = parseInt(b.dataset.o, 10);
+        if (done[qi]) { return; }
+        done[qi] = true;
+        var wrap = b.closest(".q");
+        wrap.classList.add("answered");
+        wrap.querySelectorAll(".opt").forEach(function (x) {
+          if (parseInt(x.dataset.o, 10) === QUIZ[qi].a) { x.classList.add("ok"); }
+        });
+        if (oi === QUIZ[qi].a) { rightCount++; scoreEl.textContent = String(rightCount); }
+        else { b.classList.add("no"); }
+      });
+    });
+  }
+  document.getElementById("again").addEventListener("click", buildQuiz);
+
+  /* ---------- 初始化 ---------- */
+  resize();
+  recompute();
+  reset();
+  renderCalc1();
+  renderCalc2();
+  renderCalc3();
+  buildQuiz();
+})();
+</script>
+</body>
+</html>
