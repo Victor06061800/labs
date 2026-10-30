@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>匀变速·运动的图象实验室</title>
+<style>
+  :root{--purple:#2A3F8F;--purple2:#5B4B8A;--mint:#4ECDC4;--orange:#F4A261;--paper:#EFE8D8;--ink:#22303a;--grey:#8890A8;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"微软雅黑",sans-serif;background:#f3f4f8;color:var(--ink);line-height:1.6;}
+  header{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;padding:22px 18px;text-align:center;}
+  header h1{font-size:22px;letter-spacing:1px;}
+  header p{font-size:13px;color:#cfd6ef;margin-top:6px;}
+  nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;background:#fff;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:0;z-index:10;}
+  nav button{border:none;background:#eef0fa;color:var(--purple);padding:9px 16px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:bold;transition:.2s;}
+  nav button.active{background:var(--purple);color:#fff;}
+  section{display:none;max-width:920px;margin:18px auto;padding:0 14px;}
+  section.active{display:block;}
+  .card{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 2px 10px rgba(42,63,143,.08);}
+  .card h3{color:var(--purple);font-size:16px;margin-bottom:10px;}
+  .ctrl{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px;}
+  .ctrl label{font-size:13px;color:var(--ink);min-width:120px;}
+  .ctrl input[type=range]{flex:1;min-width:160px;accent-color:var(--mint);}
+  .ctrl .val{font-weight:bold;color:var(--orange);min-width:54px;text-align:right;}
+  .preset{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px;}
+  .preset button{border:2px solid var(--mint);background:#fff;color:var(--purple);padding:7px 14px;border-radius:18px;cursor:pointer;font-size:13px;font-weight:bold;}
+  .preset button:hover{background:var(--mint);color:#fff;}
+  canvas{width:100%;background:#fbfcff;border-radius:10px;border:1px solid #e3e7f2;display:block;}
+  .note{font-size:13px;color:var(--grey);margin-top:8px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+  .calc-card input{width:100%;padding:8px;border:1px solid #d3d9ea;border-radius:8px;margin:6px 0;font-size:14px;}
+  .calc-card button{width:100%;background:var(--purple);color:#fff;border:none;padding:9px;border-radius:8px;font-size:14px;cursor:pointer;margin-top:4px;font-weight:bold;}
+  .calc-out{margin-top:10px;padding:10px;background:#eef9f7;border-radius:8px;color:#1f7a6e;font-size:14px;font-weight:bold;min-height:20px;}
+  details{background:#f8f9fd;border-radius:10px;padding:2px 14px;margin-bottom:10px;border-left:4px solid var(--mint);}
+  details summary{cursor:pointer;font-weight:bold;color:var(--purple);padding:10px 0;font-size:14px;}
+  details p{font-size:13px;color:var(--ink);padding-bottom:10px;}
+  .q{background:#f8f9fd;border-radius:10px;padding:12px 14px;margin-bottom:12px;}
+  .q .stem{font-size:14px;font-weight:bold;margin-bottom:8px;}
+  .q label{display:block;padding:7px 10px;border:1px solid #d3d9ea;border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:13px;}
+  .q label.correct{background:#e6f7e9;border-color:#7bc98f;color:#1f7a3a;}
+  .q label.wrong{background:#fdecea;border-color:#e89a96;color:#a33;}
+  .q .exp{font-size:13px;color:var(--grey);margin-top:6px;display:none;}
+  .quiz-bar{text-align:center;font-weight:bold;color:var(--purple);margin:10px 0;}
+  .btn{background:var(--orange);color:#fff;border:none;padding:11px 22px;border-radius:22px;font-size:15px;cursor:pointer;font-weight:bold;display:block;margin:0 auto;}
+  .seal{color:var(--orange);font-weight:bold;}
+  footer{text-align:center;color:var(--grey);font-size:12px;padding:20px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>匀变速 · 运动的图象实验室</h1>
+  <p>斜率=加速度 · 面积=位移 · 截距=v₀ · 切线=瞬时速度 ｜ 理化催化剂</p>
+</header>
+
+<nav>
+  <button data-tab="lab" class="active">实验台</button>
+  <button data-tab="calc">计算器</button>
+  <button data-tab="discuss">条件辨析</button>
+  <button data-tab="quiz">闯关</button>
+</nav>
+
+<!-- 实验台 -->
+<section id="lab" class="active">
+  <div class="card">
+    <h3>① 图象三联画：调 v₀、a，实时看 v-t / x-t / a-t</h3>
+    <div class="ctrl">
+      <label>初速度 v₀ (m/s)</label>
+      <input type="range" id="v0" min="-20" max="20" step="0.5" value="4">
+      <span class="val" id="v0v">4</span>
+    </div>
+    <div class="ctrl">
+      <label>加速度 a (m/s²)</label>
+      <input type="range" id="aa" min="-10" max="10" step="0.5" value="2">
+      <span class="val" id="aav">2</span>
+    </div>
+    <div class="ctrl">
+      <label>时间范围 t_max (s)</label>
+      <input type="range" id="tm" min="2" max="10" step="0.5" value="6">
+      <span class="val" id="tmv">6</span>
+    </div>
+    <div class="preset">
+      <button data-p="u">匀速 (a=0)</button>
+      <button data-p="acc">匀加速 (v0=0,a=2)</button>
+      <button data-p="dec">匀减速 (v0=12,a=-2)</button>
+      <button data-p="brake">刹车 (v0=12,a=-4)</button>
+    </div>
+    <canvas id="chart" height="380"></canvas>
+    <p class="note">提示：v-t 图线与 t 轴围成面积=位移（绿正橙负）；x-t 曲线切线斜率=瞬时速度；a-t 水平线高度=a，其与 t 轴面积=Δv。</p>
+  </div>
+
+  <div class="card">
+    <h3>② 追及相遇模拟：甲匀加速追乙匀速</h3>
+    <div class="ctrl">
+      <label>甲加速度 a甲 (m/s²)</label>
+      <input type="range" id="ca" min="0.5" max="6" step="0.5" value="2">
+      <span class="val" id="cav">2</span>
+    </div>
+    <div class="ctrl">
+      <label>乙匀速 v乙 (m/s)</label>
+      <input type="range" id="cv" min="2" max="16" step="1" value="8">
+      <span class="val" id="cvv">8</span>
+    </div>
+    <canvas id="chase" height="260"></canvas>
+    <p class="note" id="chaseNote"></p>
+  </div>
+</section>
+
+<!-- 计算器 -->
+<section id="calc">
+  <div class="grid2">
+    <div class="card calc-card">
+      <h3>已知 v₀、a、t</h3>
+      <input id="c1_v0" placeholder="v₀ (m/s)" type="number" value="4">
+      <input id="c1_a" placeholder="a (m/s²)" type="number" value="2">
+      <input id="c1_t" placeholder="t (s)" type="number" value="6">
+      <button onclick="calc1()">计算 v 与 x</button>
+      <div class="calc-out" id="o1">末速度 v = v₀ + a t；位移 x = v₀t + ½a t²</div>
+    </div>
+    <div class="card calc-card">
+      <h3>已知 v₀、a、v</h3>
+      <input id="c2_v0" placeholder="v₀ (m/s)" type="number" value="4">
+      <input id="c2_a" placeholder="a (m/s²)" type="number" value="2">
+      <input id="c2_v" placeholder="末速度 v (m/s)" type="number" value="16">
+      <button onclick="calc2()">计算 t 与 x</button>
+      <div class="calc-out" id="o2">t = (v−v₀)/a；x = (v²−v₀²)/(2a)</div>
+    </div>
+    <div class="card calc-card">
+      <h3>追及：最远距离</h3>
+      <input id="c3_v0" placeholder="后车初速 v₀ (m/s)" type="number" value="0">
+      <input id="c3_a" placeholder="后车 a (m/s²)" type="number" value="2">
+      <input id="c3_v" placeholder="前车匀速 v (m/s)" type="number" value="8">
+      <button onclick="calc3()">计算最远与追上</button>
+      <div class="calc-out" id="o3">共速时 t*=v/a 相距最远；追上时 t′=2v/a</div>
+    </div>
+    <div class="card calc-card">
+      <h3>图象读参：v²-x 图</h3>
+      <input id="c4_v02" placeholder="v₀² (纵截距)" type="number" value="16">
+      <input id="c4_k" placeholder="斜率 2a" type="number" value="-1">
+      <input id="c4_x" placeholder="某位移 x (m)" type="number" value="8">
+      <button onclick="calc4()">反求 a 与 v</button>
+      <div class="calc-out" id="o4">a = 斜率/2；v = √(v₀² + 2a x)</div>
+    </div>
+  </div>
+</section>
+
+<!-- 条件辨析 -->
+<section id="discuss">
+  <div class="card"><h3>八条易错辨析（点开看解析）</h3></div>
+  <details><summary>1. s-t 图象就是物体的运动轨迹？</summary><p>错。s-t 图是「位移—时间」关系曲线，不是实际路径。物体始终沿直线运动，图线却可能是抛物线；折返时图象掉头，但物体仍在直线上往返。</p></details>
+  <details><summary>2. v-t 图斜率为负，说明物体在做减速运动？</summary><p>不准确。斜率=加速度 a 的方向，与正方向相反；是否「减速」要看 a 与速度 v 是否反向。例如 a 为负但 v 也为负（已反向运动），两者同向反而加速。</p></details>
+  <details><summary>3. x/t-t 图（位移/时间 对 时间）的斜率等于加速度 a？</summary><p>错。由 x=v₀t+½at² 得 x/t = v₀ + ½a t，所以截距=v₀、<span class="seal">斜率=a/2</span>，不是 a。讲义原句「斜率为 a」是笔误。</p></details>
+  <details><summary>4. a-t 图线与 t 轴面积等于末速度？</summary><p>只有在初速度 v₀=0 时才成立。一般情况下面积=速度变化量 Δv，末速度 = v₀ + Δv。</p></details>
+  <details><summary>5. v-t 两图线交点表示两车相遇？</summary><p>错。交点表示「此刻速度相等（共速）」；相遇要看两图线与 t 轴围成的<b>面积是否相等</b>（位移相等且起点相同）。</p></details>
+  <details><summary>6. s-t 图两图线交点表示什么？</summary><p>表示两物体在该时刻处于<b>同一位置</b>，即相遇（或追上）。交点处两线斜率不同，说明速度不同。</p></details>
+  <details><summary>7. s-t 是抛物线，一定对应匀变速直线运动？</summary><p>是。位移是时间二次函数 x=v₀t+½at²，图象为抛物线，其切线斜率（速度）随时间线性变化，即加速度恒定。</p></details>
+  <details><summary>8. 非匀变速（如半圆、正弦 v-t 图）还能用面积求位移吗？</summary><p>能，而且这是它唯一的定量用法。不管图线是不是直线，v-t 图与 t 轴围成面积始终=位移；a-t 面积始终=Δv。只是不能再用「斜率=常数」罢了。</p></details>
+</section>
+
+<!-- 闯关 -->
+<section id="quiz">
+  <div class="card"><h3>读图闯关（10 题单选）</h3></div>
+  <div id="quizBox"></div>
+  <div class="quiz-bar" id="quizScore"></div>
+  <button class="btn" onclick="checkQuiz()">交卷看解析</button>
+</section>
+
+<footer>降低活化能，加速你的成长 ｜ 沪科版必修一 · 第 2.3 节（4）图象</footer>
+
+<script>
+var QZ = [
+  {s:"1. s-t 图象上某点切线斜率表示（　）", o:["加速度","瞬时速度","位移","平均速度"], a:1},
+  {s:"2. v-t 图象的斜率表示（　）", o:["速度","位移","加速度","时间"], a:2},
+  {s:"3. v-t 图象与 t 轴围成面积表示（　）", o:["速度变化量","加速度","位移","路程(必为正)"], a:2},
+  {s:"4. a-t 图象与 t 轴围成面积表示（　）", o:["末速度","速度变化量 Δv","位移","加速度"], a:1},
+  {s:"5. x/t-t 图（由 x=v₀t+½at² 变形）的斜率等于（　）", o:["v₀","a","a/2","2a"], a:2},
+  {s:"6. v²-x 图（v²=v₀²+2ax）的斜率等于（　）", o:["v₀²","a","a/2","2a"], a:3},
+  {s:"7. 后车追前车，两车相距最远的条件是（　）", o:["位移相等","速度相等","加速度相等","时间最长"], a:1},
+  {s:"8. s-t 两图线相交表示两物体（　）", o:["速度相等","加速度相等","同一位置(相遇)","同向运动"], a:2},
+  {s:"9. v-t 两图线相交表示两物体（　）", o:["相遇","速度相等(共速)","位移相等","加速度相等"], a:1},
+  {s:"10. 匀减速到停的 v-t 图，其面积等于（　）", o:["总位移","总路程的一半","末速度","加速度×时间"], a:0}
+];
+var EXP = [
+  "s-t 曲线切线斜率=该时刻瞬时速度；斜率=速度大小，正负=方向。",
+  "v-t 图斜率=加速度 a，纵截距=v₀。",
+  "v-t 面积=位移，轴上方正、下方负；只有单向运动才等于路程。",
+  "a-t 面积=速度变化量 Δv，末速度=v₀+Δv（仅 v₀=0 时等于末速度）。",
+  "x/t = v₀ + ½a t，故截距 v₀、斜率 a/2。",
+  "v² = v₀² + 2a x，故纵截距 v₀²、斜率 2a。",
+  "共速前间距拉大、共速后缩小，故速度相等时最远。",
+  "s-t 交点=同一时刻同一位置=相遇/追上。",
+  "v-t 交点=同一时刻速度相同（共速），相遇要看面积(位移)是否相等。",
+  "匀减速到停，v-t 三角形（或梯形）面积=全程位移。"
+];
+
+function setupCanvas(cv){
+  var dpr = window.devicePixelRatio || 1;
+  var cssW = cv.clientWidth || cv.parentElement.clientWidth;
+  var cssH = cv.getAttribute("height") ? parseInt(cv.getAttribute("height")) : 360;
+  cv.width = cssW * dpr; cv.height = cssH * dpr;
+  cv.style.height = cssH + "px";
+  var ctx = cv.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx:ctx, w:cssW, h:cssH};
+}
+
+function drawSub(ctx, ox, oy, w, h, title, tmax, fn, vmin, vmax, color){
+  // 背景与坐标轴
+  ctx.save();
+  ctx.strokeStyle = "#c8cee0"; ctx.lineWidth = 1;
+  ctx.strokeRect(ox, oy-h, w, h);
+  var axY = oy - (0 - vmin)/(vmax - vmin) * h; // v=0 对应像素
+  ctx.strokeStyle = "#8890A8"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(ox, oy-h); ctx.lineTo(ox, oy); ctx.lineTo(ox+w, oy); ctx.stroke();
+  // 曲线采样 + 面积
+  var N = 120, pts = [];
+  for(var k=0;k<=N;k++){ var t=k/N*tmax; var v=fn(t); var px=ox + (t/tmax)*w; var py=oy - (v-vmin)/(vmax-vmin)*h; pts.push([px,py]); }
+  // 面积填充到轴 (axY)
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], axY);
+  for(var i=0;i<pts.length;i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.lineTo(pts[pts.length-1][0], axY);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(78,205,196,0.18)"; ctx.fill();
+  // 曲线
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for(var j=1;j<pts.length;j++) ctx.lineTo(pts[j][0], pts[j][1]);
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+  // 标题
+  ctx.fillStyle = "#2A3F8F"; ctx.font = "bold 13px 微软雅黑"; ctx.textAlign="left";
+  ctx.fillText(title, ox+8, oy-h+18);
+  // 轴标
+  ctx.fillStyle="#8890A8"; ctx.font="12px 微软雅黑";
+  ctx.fillText("t→", ox+w-22, oy-6);
+  ctx.fillText(color==="#F4A261"?"s":"v", ox+6, oy-h+34);
+  ctx.restore();
+}
+
+function drawChart(){
+  var v0=parseFloat(document.getElementById("v0").value);
+  var a=parseFloat(document.getElementById("aa").value);
+  var tmax=parseFloat(document.getElementById("tm").value);
+  var r=setupCanvas(document.getElementById("chart"));
+  var ctx=r.ctx, W=r.w, H=r.h;
+  ctx.clearRect(0,0,W,H);
+  var pad=12, subW=(W-pad*4)/3, subH=H-60, oyTop=40;
+  // v-t
+  var vEnd=v0+a*tmax; var vmin=Math.min(0,v0,vEnd)-2, vmax=Math.max(0,v0,vEnd)+2;
+  drawSub(ctx, pad, oyTop+subH, subW, subH, "v-t 图", tmax, function(t){return v0+a*t;}, vmin, vmax, "#2A3F8F");
+  // x-t
+  var xs=[]; for(var k=0;k<=60;k++){var t=k/60*tmax; xs.push(v0*t+0.5*a*t*t);}
+  var xmin=Math.min(0,xs[0],xs[xs.length-1])-1, xmax=Math.max(0,xs[0],xs[xs.length-1])+1;
+  drawSub(ctx, pad*2+subW, oyTop+subH, subW, subH, "x-t 图", tmax, function(t){return v0*t+0.5*a*t*t;}, xmin, xmax, "#4ECDC4");
+  // a-t
+  drawSub(ctx, pad*3+subW*2, oyTop+subH, subW, subH, "a-t 图", tmax, function(t){return a;}, a-1, a+1, "#F4A261");
+  // 底部说明：计算斜率/面积示例
+  ctx.fillStyle="#22303a"; ctx.font="13px 微软雅黑"; ctx.textAlign="left";
+  var xEnd=v0*tmax+0.5*a*tmax*tmax;
+  ctx.fillText("当前：v₀="+v0+"  a="+a+"  t_max="+tmax+"  → 末速 v="+ (v0+a*tmax).toFixed(1) +" 位移 x="+xEnd.toFixed(1), pad, H-12);
+}
+
+function drawChase(){
+  var a=parseFloat(document.getElementById("ca").value);
+  var vb=parseFloat(document.getElementById("cv").value);
+  var r=setupCanvas(document.getElementById("chase"));
+  var ctx=r.ctx, W=r.w, H=r.h;
+  ctx.clearRect(0,0,W,H);
+  var pad=14, ox=pad, oy=H-30, w=W-pad*2, h=H-60;
+  var tStar=vb/a; // 共速时刻
+  var tmax=Math.max(tStar*2, 2)+0.5;
+  var vmax=Math.max(vb, a*tmax)+2;
+  // 轴
+  ctx.strokeStyle="#8890A8"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(ox,oy-h); ctx.lineTo(ox,oy); ctx.lineTo(ox+w,oy); ctx.stroke();
+  function mapX(t){return ox+(t/tmax)*w;}
+  function mapY(v){return oy-(v/vmax)*h;}
+  // 乙 匀速
+  ctx.strokeStyle="#F4A262"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mapX(0),mapY(vb)); ctx.lineTo(mapX(tmax),mapY(vb)); ctx.stroke();
+  // 甲 匀加速 (v0=0)
+  ctx.strokeStyle="#2A3F8F"; ctx.lineWidth=3;
+  ctx.beginPath();
+  for(var k=0;k<=80;k++){var t=k/80*tmax; var v=a*t; if(k===0)ctx.moveTo(mapX(t),mapY(v)); else ctx.lineTo(mapX(t),mapY(v));}
+  ctx.stroke();
+  // 共速竖线
+  var xStar=mapX(tStar);
+  ctx.strokeStyle="#4ECDC4"; ctx.setLineDash([6,4]); ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(xStar,oy-h); ctx.lineTo(xStar,oy); ctx.stroke(); ctx.setLineDash([]);
+  // 面积差(最远间距) 填充 0~tStar 两线之间
+  ctx.beginPath();
+  ctx.moveTo(mapX(0),mapY(vb));
+  for(var k2=0;k2<=80;k2++){var t2=k2/80*tStar; ctx.lineTo(mapX(t2),mapY(vb));}
+  for(var k3=80;k3>=0;k3--){var t3=k3/80*tStar; ctx.lineTo(mapX(t3),mapY(a*t3));}
+  ctx.closePath(); ctx.fillStyle="rgba(78,205,196,0.20)"; ctx.fill();
+  // 标注
+  ctx.fillStyle="#2A3F8F"; ctx.font="bold 13px 微软雅黑"; ctx.textAlign="left";
+  ctx.fillText("甲匀加速 (v0=0,a="+a+")", ox+8, oy-h+18);
+  ctx.fillStyle="#F4A262"; ctx.fillText("乙匀速 v="+vb, ox+8, oy-h+38);
+  ctx.fillStyle="#1f7a6e"; ctx.fillText("共速 t*="+tStar.toFixed(1)+"s", xStar+6, oy-h+18);
+  var dMax=vb*tStar - 0.5*a*tStar*tStar;
+  var note=document.getElementById("chaseNote");
+  note.innerHTML = "共速时刻 t* = v乙/a = <b>"+tStar.toFixed(2)+" s</b>，此时相距最远 ≈ <b>"+dMax.toFixed(1)+" m</b>；追上时刻 t′ = 2v乙/a = "+(2*tStar).toFixed(2)+" s。";
+}
+
+function bindRange(id, vid, fn){
+  var el=document.getElementById(id);
+  el.addEventListener("input", function(){ document.getElementById(vid).textContent = el.value; fn(); });
+}
+bindRange("v0","v0v",drawChart);
+bindRange("aa","aav",drawChart);
+bindRange("tm","tmv",drawChart);
+bindRange("ca","cav",drawChase);
+bindRange("cv","cvv",drawChase);
+
+document.querySelectorAll(".preset button").forEach(function(b){
+  b.addEventListener("click", function(){
+    var p=b.getAttribute("data-p"); var v0=4,a=2;
+    if(p==="u"){v0=6;a=0;} else if(p==="acc"){v0=0;a=2;} else if(p==="dec"){v0=12;a=-2;} else if(p==="brake"){v0=12;a=-4;}
+    document.getElementById("v0").value=v0; document.getElementById("aa").value=a;
+    document.getElementById("v0v").textContent=v0; document.getElementById("aav").textContent=a;
+    drawChart();
+  });
+});
+
+// 选项卡切换
+document.querySelectorAll("nav button").forEach(function(b){
+  b.addEventListener("click", function(){
+    document.querySelectorAll("nav button").forEach(function(x){x.classList.remove("active");});
+    document.querySelectorAll("section").forEach(function(x){x.classList.remove("active");});
+    b.classList.add("active");
+    var t=b.getAttribute("data-tab");
+    document.getElementById(t).classList.add("active");
+    if(t==="lab"){ drawChart(); drawChase(); }
+  });
+});
+
+// 计算器
+function gv(id){var v=parseFloat(document.getElementById(id).value); return isNaN(v)?0:v;}
+function calc1(){var v0=gv("c1_v0"),a=gv("c1_a"),t=gv("c1_t"); var v=v0+a*t; var x=v0*t+0.5*a*t*t; document.getElementById("o1").innerHTML="v = "+v.toFixed(2)+" m/s；x = "+x.toFixed(2)+" m";}
+function calc2(){var v0=gv("c2_v0"),a=gv("c2_a"),v=gv("c2_v"); if(a===0){document.getElementById("o2").textContent="a 不能为 0";return;} var t=(v-v0)/a; var x=(v*v-v0*v0)/(2*a); document.getElementById("o2").innerHTML="t = "+t.toFixed(2)+" s；x = "+x.toFixed(2)+" m";}
+function calc3(){var v0=gv("c3_v0"),a=gv("c3_a"),v=gv("c3_v"); if(a===0){document.getElementById("o3").textContent="a 不能为 0";return;} var tStar=v/a; var dMax=v*tStar-0.5*a*tStar*tStar; var tCatch=2*v/a; document.getElementById("o3").innerHTML="最远 t*="+tStar.toFixed(2)+"s，Δs_max="+dMax.toFixed(2)+"m；追上 t′="+tCatch.toFixed(2)+"s（位移="+ (v*tCatch).toFixed(1) +"m）";}
+function calc4(){var v02=gv("c4_v02"),k=gv("c4_k"),x=gv("c4_x"); var a=k/2; var v2=v02+2*a*x; var v=v2>=0?Math.sqrt(v2):NaN; document.getElementById("o4").innerHTML="a = "+a.toFixed(2)+" m/s²；v = "+(isNaN(v)?"无实数解":v.toFixed(2)+" m/s");}
+
+// 闯关渲染
+var quizBox=document.getElementById("quizBox");
+QZ.forEach(function(q,idx){
+  var div=document.createElement("div"); div.className="q";
+  var html="<div class='stem'>"+q.s+"</div>";
+  q.o.forEach(function(op,oi){
+    html+="<label data-q='"+idx+"' data-o='"+oi+"'><input type='radio' name='q"+idx+"' value='"+oi+"'> "+String.fromCharCode(65+oi)+". "+op+"</label>";
+  });
+  html+="<div class='exp' id='exp"+idx+"'>解析："+EXP[idx]+"</div>";
+  div.innerHTML=html; quizBox.appendChild(div);
+});
+function checkQuiz(){
+  var score=0;
+  QZ.forEach(function(q,idx){
+    var labels=quizBox.querySelectorAll("label[data-q='"+idx+"']");
+    var picked=-1;
+    labels.forEach(function(lb){ var inp=lb.querySelector("input"); if(inp.checked) picked=parseInt(lb.getAttribute("data-o")); });
+    labels.forEach(function(lb){ var oi=parseInt(lb.getAttribute("data-o")); lb.classList.remove("correct","wrong"); if(oi===q.a) lb.classList.add("correct"); if(oi===picked && oi!==q.a) lb.classList.add("wrong"); });
+    if(picked===q.a) score++;
+    document.getElementById("exp"+idx).style.display="block";
+  });
+  document.getElementById("quizScore").innerHTML="得分："+score+" / "+QZ.length+"　（绿=正确项，红=你的错选）";
+}
+
+// 初始绘制
+drawChart(); drawChase();
+</script>
+</body>
+</html>
