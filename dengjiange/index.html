@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>匀变速·等间隔实验室</title>
+<style>
+  :root{
+    --purple:#2A3F8F; --purple2:#5B4B8A; --mint:#4ECDC4; --mint-d:#2E9E96;
+    --orange:#F4A261; --orange-d:#D17B36; --paper:#EFE8D8; --ink:#23283D; --grey:#9AA0B6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:"Microsoft YaHei",-apple-system,sans-serif;background:linear-gradient(160deg,#eef1fb,#f7f8fd);color:var(--ink);padding:14px;line-height:1.6;}
+  .head{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;border-radius:18px;padding:18px 20px;margin-bottom:14px;box-shadow:0 8px 24px rgba(42,63,143,.25);}
+  .head h1{font-size:21px;letter-spacing:1px;}
+  .head p{font-size:13px;color:#cfe9e6;margin-top:4px;}
+  .seal{display:inline-block;background:var(--orange-d);color:#fff;border-radius:6px;padding:2px 8px;font-size:13px;margin-top:6px;}
+  .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;}
+  .tab{flex:0 0 auto;background:#fff;border:2px solid #e3e7f4;color:var(--purple);font-weight:bold;padding:9px 16px;border-radius:30px;cursor:pointer;font-size:14px;}
+  .tab.on{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .panel{display:none;background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(42,63,143,.08);}
+  .panel.on{display:block;}
+  .panel h2{color:var(--purple);font-size:17px;margin-bottom:4px;}
+  .panel .sub{color:var(--grey);font-size:13px;margin-bottom:12px;}
+  label{display:block;font-size:13px;color:var(--purple2);margin:10px 0 4px;font-weight:bold;}
+  input[type=number]{width:100%;padding:9px 10px;border:2px solid #e3e7f4;border-radius:10px;font-size:15px;font-family:inherit;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .row>div{flex:1;min-width:120px;}
+  button.go{margin-top:12px;background:var(--mint);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;width:100%;}
+  button.go:active{transform:scale(.98);}
+  .out{margin-top:12px;background:#f3f6ff;border-left:4px solid var(--mint);border-radius:8px;padding:10px 12px;font-size:14px;}
+  .out b{color:var(--purple);}
+  canvas{width:100%;background:#fbfcff;border:1px solid #e8ebf5;border-radius:10px;margin-top:8px;}
+  .bars{display:flex;align-items:flex-end;gap:10px;height:160px;margin-top:10px;padding:0 6px;}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .bar .col{width:70%;border-radius:6px 6px 0 0;background:var(--mint);transition:height .3s;}
+  .bar .lab{font-size:12px;color:var(--grey);margin-top:4px;}
+  .bar .val{font-size:12px;color:var(--purple);font-weight:bold;}
+  .card{background:#f7f8fd;border:1px solid #e8ebf5;border-radius:12px;padding:12px;margin:10px 0;}
+  .card h3{color:var(--orange-d);font-size:15px;margin-bottom:6px;}
+  .chip{display:inline-block;background:#eef1fb;color:var(--purple);border-radius:20px;padding:4px 12px;margin:4px 4px 0 0;font-size:13px;}
+  .q{background:#f7f8fd;border-radius:12px;padding:12px;margin:10px 0;border:1px solid #e8ebf5;}
+  .q .stem{font-weight:bold;color:var(--purple);}
+  .opts{margin:8px 0;}
+  .opt{display:block;padding:8px 10px;border:2px solid #e3e7f4;border-radius:10px;margin:6px 0;cursor:pointer;font-size:14px;}
+  .opt.sel{border-color:var(--mint);background:#eafaf8;}
+  .opt.ok{border-color:var(--mint-d);background:#d9f5f1;color:var(--mint-d);font-weight:bold;}
+  .opt.no{border-color:#e06666;background:#fdeaea;}
+  .exp{font-size:13px;color:var(--orange-d);margin-top:6px;display:none;}
+  .score{text-align:center;font-size:18px;color:var(--purple);font-weight:bold;margin:10px 0;}
+  .foot{text-align:center;color:var(--grey);font-size:12px;margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>匀变速 · 等间隔实验室</h1>
+  <p>比例法（时间等分 / 位移等分）· Δx = aT² 逐差法 · 逆向思维 · 追及问题</p>
+  <span class="seal">举一反三 · 《论语》</span>
+</div>
+
+<div class="tabs">
+  <div class="tab on" data-t="lab">实验台</div>
+  <div class="tab" data-t="calc">计算器</div>
+  <div class="tab" data-t="judge">条件辨析</div>
+  <div class="tab" data-t="game">闯关</div>
+</div>
+
+<!-- 实验台 -->
+<div class="panel on" id="lab">
+  <h2>实验台：纸带与比例柱</h2>
+  <p class="sub">给定 v₀、a、时间间隔 T 与段数，生成纸带；看相邻段位移差是否恒定（Δx = aT²）。</p>
+  <div class="row">
+    <div><label>初速度 v₀ (m/s)</label><input id="v0" type="number" value="0" step="0.5"></div>
+    <div><label>加速度 a (m/s²)</label><input id="aa" type="number" value="2" step="0.5"></div>
+  </div>
+  <div class="row">
+    <div><label>时间间隔 T (s)</label><input id="TT" type="number" value="1" step="0.5"></div>
+    <div><label>段数 n</label><input id="nn" type="number" value="5" step="1" min="2" max="12"></div>
+  </div>
+  <button class="go" onclick="drawTape()">生成纸带</button>
+  <canvas id="tape" height="220"></canvas>
+  <div class="out" id="tapeOut">点击「生成纸带」查看各段位移与 Δx。</div>
+
+  <h2 style="margin-top:18px;">比例柱（初速为零 · 时间等分）</h2>
+  <p class="sub">输入段数 m，看速度比、位移比、连续位移比。</p>
+  <div class="row">
+    <div><label>段数 m</label><input id="mm" type="number" value="3" step="1" min="2" max="8"></div>
+  </div>
+  <button class="go" onclick="drawRatio()">画比例柱</button>
+  <div class="bars" id="barsV"></div>
+  <div class="out" id="ratioOut"></div>
+</div>
+
+<!-- 计算器 -->
+<div class="panel" id="calc">
+  <h2>计算器</h2>
+  <p class="sub">三类常用计算：比例、逐差法、追及。</p>
+
+  <div class="card">
+    <h3>① 比例法（初速为零）</h3>
+    <div class="row">
+      <div><label>段数 n</label><input id="pn" type="number" value="4" step="1" min="2" max="10"></div>
+      <div><label>模式</label>
+        <select id="pmode" style="width:100%;padding:9px;border:2px solid #e3e7f4;border-radius:10px;font-size:15px;">
+          <option value="time">时间等分</option>
+          <option value="disp">位移等分</option>
+        </select>
+      </div>
+    </div>
+    <button class="go" onclick="calcRatio()">计算比例</button>
+    <div class="out" id="ratioCalcOut"></div>
+  </div>
+
+  <div class="card">
+    <h3>② 逐差法求加速度</h3>
+    <p style="font-size:12px;color:var(--grey);">输入连续 5 段位移（单位 cm）与计数点间隔 T（s）。</p>
+    <div class="row">
+      <div><label>x₁ (cm)</label><input id="x1" type="number" value="2.0" step="0.1"></div>
+      <div><label>x₂ (cm)</label><input id="x2" type="number" value="2.4" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>x₃ (cm)</label><input id="x3" type="number" value="2.8" step="0.1"></div>
+      <div><label>x₄ (cm)</label><input id="x4" type="number" value="3.2" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>x₅ (cm)</label><input id="x5" type="number" value="3.6" step="0.1"></div>
+      <div><label>T (s)</label><input id="xT" type="number" value="0.02" step="0.01"></div>
+    </div>
+    <button class="go" onclick="calcDiff()">算 a</button>
+    <div class="out" id="diffOut"></div>
+  </div>
+
+  <div class="card">
+    <h3>③ 追及问题（同地出发）</h3>
+    <p style="font-size:12px;color:var(--grey);">被追者匀速 v，追者从静止以 a 匀加速。</p>
+    <div class="row">
+      <div><label>被追者速度 v (m/s)</label><input id="qv" type="number" value="6" step="1"></div>
+      <div><label>追者加速度 a (m/s²)</label><input id="qa" type="number" value="3" step="0.5"></div>
+    </div>
+    <button class="go" onclick="calcChase()">求解</button>
+    <div class="out" id="chaseOut"></div>
+  </div>
+</div>
+
+<!-- 条件辨析 -->
+<div class="panel" id="judge">
+  <h2>条件辨析：这 8 句话对不对？</h2>
+  <p class="sub">点一下看正误与原因。</p>
+  <div id="judgeList"></div>
+</div>
+
+<!-- 闯关 -->
+<div class="panel" id="game">
+  <h2>闯关：10 题检验</h2>
+  <p class="sub">选答案，即时判分。</p>
+  <div id="gameList"></div>
+  <div class="score" id="gameScore"></div>
+  <button class="go" onclick="gameReset()">重置闯关</button>
+</div>
+
+<div class="foot">理化催化剂 · 降低活化能，加速你的成长</div>
+
+<script>
+/* ===== 选项卡切换 ===== */
+var tabs = document.querySelectorAll('.tab');
+tabs.forEach(function(t){
+  t.addEventListener('click', function(){
+    tabs.forEach(function(x){x.classList.remove('on');});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+    t.classList.add('on');
+    document.getElementById(t.getAttribute('data-t')).classList.add('on');
+  });
+});
+
+/* ===== 工具：格式化数字 ===== */
+function f1(x){ return (Math.round(x*1000)/1000).toString(); }
+
+/* ===== 实验台：纸带 ===== */
+function drawTape(){
+  var v0 = parseFloat(document.getElementById('v0').value)||0;
+  var a = parseFloat(document.getElementById('aa').value)||0;
+  var T = parseFloat(document.getElementById('TT').value)||1;
+  var n = Math.max(2, Math.min(12, parseInt(document.getElementById('nn').value)||5));
+  var s = function(t){ return v0*t + 0.5*a*t*t; };
+  var segs = [];
+  for(var k=0;k<n;k++){ segs.push(s((k+1)*T) - s(k*T)); }
+  var cv = document.getElementById('tape');
+  var dpr = window.devicePixelRatio||1;
+  var W = cv.clientWidth, H = 220;
+  cv.width = W*dpr; cv.height = H*dpr;
+  var ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  var maxs = Math.max.apply(null, segs);
+  var pad = 30, baseY = H-40, usable = W - pad*2;
+  var total = segs.reduce(function(p,c){return p+c;},0);
+  var scale = usable/total;
+  var xs=[pad];
+  for(var i=0;i<n;i++){ xs.push(xs[i] + segs[i]*scale); }
+  // 基线
+  ctx.strokeStyle='#c9d0e6'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(pad,baseY); ctx.lineTo(W-pad,baseY); ctx.stroke();
+  // 点 + 段
+  for(var j=0;j<=n;j++){
+    ctx.fillStyle = (j%2===0)?'#4ECDC4':'#5B4B8A';
+    ctx.beginPath(); ctx.arc(xs[j], baseY, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(xs[j], baseY, 2.4, 0, Math.PI*2); ctx.fill();
+  }
+  for(var m=0;m<n;m++){
+    var mid=(xs[m]+xs[m+1])/2;
+    ctx.fillStyle='#2A3F8F'; ctx.font='12px Microsoft YaHei';
+    ctx.textAlign='center';
+    ctx.fillText('x'+(m+1), mid, baseY-16);
+  }
+  // 输出
+  var d = [];
+  for(var p=1;p<n;p++){ d.push(f1(segs[p]-segs[p-1])); }
+  var allEq = d.every(function(x){return Math.abs(parseFloat(x)-parseFloat(d[0]))<1e-6;});
+  var out = '各段位移：' + segs.map(f1).join('， ') + '<br>相邻段差 Δx：' + d.join('， ');
+  out += '<br>理论 Δx = aT² = ' + f1(a*T*T) + '（' + (allEq?'✓ 各段差恒定，符合 Δx=aT²':'⚠ 请检查输入') + '）';
+  if(Math.abs(v0)<1e-9){ out += '<br>v₀=0 时连续位移比≈ 1:3:5:…（奇数比）。'; }
+  document.getElementById('tapeOut').innerHTML = out;
+}
+
+/* ===== 实验台：比例柱 ===== */
+function drawRatio(){
+  var m = Math.max(2, Math.min(8, parseInt(document.getElementById('mm').value)||3));
+  // 速度比 1:2:..:m
+  var box = document.getElementById('barsV'); box.innerHTML='';
+  for(var i=1;i<=m;i++){
+    var h = (i/m)*100;
+    box.innerHTML += '<div class="bar"><span class="val">'+i+'</span><div class="col" style="height:'+h+'%"></div><span class="lab">v'+i+'</span></div>';
+  }
+  var speed = [], disp = [], cons = [];
+  for(var k=1;k<=m;k++){ speed.push(k); disp.push(k*k); cons.push(2*k-1); }
+  document.getElementById('ratioOut').innerHTML =
+    '速度比 v₁…vₘ = ' + speed.join(':') + '<br>' +
+    '位移比 x₁…xₘ = ' + disp.join(':') + '（= 1²:2²:…:'+m+'²）<br>' +
+    '连续位移比 = ' + cons.join(':') + '（= 1:3:5:…:(2'+m+'−1)）';
+}
+
+/* ===== 计算器：比例 ===== */
+function calcRatio(){
+  var n = Math.max(2, Math.min(10, parseInt(document.getElementById('pn').value)||4));
+  var mode = document.getElementById('pmode').value;
+  var r;
+  if(mode==='time'){
+    var sp=[], dp=[], cs=[];
+    for(var i=1;i<=n;i++){sp.push(i); dp.push(i*i); cs.push(2*i-1);}
+    r = '【时间等分】<br>速度比 = '+sp.join(':')+'<br>位移比 = '+dp.join(':')+'（1²:2²:…:'+n+'²）<br>连续位移比 = '+cs.join(':')+'（1:3:5:…:(2'+n+'−1)）';
+  } else {
+    var v=[], t=[], ct=[], vd=[], td=[], ctd=[];
+    for(var k=1;k<=n;k++){
+      v.push('√'+k); t.push('√'+k);
+      ct.push(k>1?('√'+k+'−√'+(k-1)):'1');
+      vd.push(f1(Math.sqrt(k))); td.push(f1(Math.sqrt(k)));
+      ctd.push(f1(k>1?(Math.sqrt(k)-Math.sqrt(k-1)):1));
+    }
+    r = '【位移等分】<br>通过 x₀…'+n+'x₀ 的速度比 = '+v.join(':')+' ≈ '+vd.join(':')+
+        '<br>通过 x₀…'+n+'x₀ 的时间比 = '+t.join(':')+' ≈ '+td.join(':')+
+        '<br>连续相等位移时间比 = '+ct.join(':')+' ≈ '+ctd.join(':');
+  }
+  document.getElementById('ratioCalcOut').innerHTML = r;
+}
+
+/* ===== 计算器：逐差法 ===== */
+function calcDiff(){
+  var xs=[1,2,3,4,5].map(function(i){return parseFloat(document.getElementById('x'+i).value)||0;});
+  var T = parseFloat(document.getElementById('xT').value)||0.02;
+  for(var i=0;i<5;i++){ xs[i] = xs[i]/100; } // cm -> m
+  var num = (xs[3]+xs[4]) - (xs[0]+xs[1]);
+  var a = num/(6*T*T);
+  var dxx = (xs[1]-xs[0]);
+  document.getElementById('diffOut').innerHTML =
+    '逐差：a = (x₄+x₅−x₁−x₂)/(6T²)<br>' +
+    '= ('+f1(xs[3])+'+'+f1(xs[4])+')−('+f1(xs[0])+'+'+f1(xs[1])+') / (6×'+T+'²)<br>' +
+    '= <b>'+f1(a)+' m/s²</b><br>（简单差法 a≈Δx/T²='+f1(dxx/(T*T))+' m/s²，隔项逐差更准）';
+}
+
+/* ===== 计算器：追及 ===== */
+function calcChase(){
+  var v = parseFloat(document.getElementById('qv').value)||0;
+  var a = parseFloat(document.getElementById('qa').value)||0;
+  if(a<=0){ document.getElementById('chaseOut').innerHTML='加速度需为正。'; return; }
+  var tMax = v/a;
+  var dMax = v*tMax - 0.5*a*tMax*tMax;
+  var tCatch = 2*v/a;
+  var vCatch = a*tCatch;
+  document.getElementById('chaseOut').innerHTML =
+    '速度相等时相距最远：t = v/a = <b>'+f1(tMax)+' s</b>，Δs_max = <b>'+f1(dMax)+' m</b><br>' +
+    '追上（位移相等）：½a t² = v t → t = 2v/a = <b>'+f1(tCatch)+' s</b><br>' +
+    '追上时速度 v = a t = <b>'+f1(vCatch)+' m/s</b>（= 2v）';
+}
+
+/* ===== 条件辨析 ===== */
+var judges = [
+  ['初速为零的匀加速，第 n 秒内位移与前 n 秒位移成正比。', false, '第 n 秒内 ∝ (2n−1)，前 n 秒 ∝ n²，两者不是正比关系。'],
+  ['位移等分下，通过连续相等位移的时间比也是 1:2:3。', false, '那是时间等分的速度比；位移等分连续段时间比是 1:(√2−1):(√3−√2):…。'],
+  ['Δx = aT² 只能在初速度为零时使用。', false, 'Δx=aT² 对任意匀变速都成立，与初速度是否为零无关。'],
+  ['竖直上抛可以看成自由落体的逆过程来用比例法。', true, '逆向思维：把减速倒放成加速，初速为零的比例公式直接套。'],
+  ['纸带相邻计数点位移差恒定，说明物体做匀变速直线运动。', true, 'Δx=aT² 恒定 ⟺ 加速度恒定，即匀变速。'],
+  ['用逐差法时，T 就是打点计时器的打点周期 0.02 s。', false, '若每 5 个点取一个计数点，T = 5×0.02 s，不能直接拿 0.02 s。'],
+  ['追及问题中，两车速度相等时一定是相遇时刻。', false, '速度相等是距离最大（或最小）的临界，不一定是相遇。'],
+  ['刹车问题可以直接把总时间代进位移公式。', false, '须先算停止时间 t₀=v₀/|a|，t>t₀ 时车已停，位移不再增加。']
+];
+(function(){
+  var box = document.getElementById('judgeList');
+  judges.forEach(function(j){
+    var div = document.createElement('div'); div.className='card';
+    div.innerHTML = '<h3>'+j[0]+'</h3><div class="exp" style="display:block;">'+(j[1]?'✓ 正确。':'✗ 错误。')+j[2]+'</div>';
+    box.appendChild(div);
+  });
+})();
+
+/* ===== 闯关 ===== */
+var quiz = [
+  ['初速为零的匀加速，第 1、2、3 秒内位移之比是（　）', ['1:1:1','1:2:3','1:3:5','1:4:9'], 2, '第 n 秒内位移 ∝ (2n−1)：1:3:5。'],
+  ['初速为零的匀加速，前 1、2、3 秒内位移之比是（　）', ['1:2:3','1:3:5','1:4:9','1:8:27'], 2, '前 n 秒位移 ∝ n²：1:4:9。'],
+  ['初速为零的匀加速，1、2、3 秒末速度之比是（　）', ['1:2:3','1:3:5','1:4:9','1:√2:√3'], 0, 'v=at，速度 ∝ 时间：1:2:3。'],
+  ['自由落体第 n 秒内的位移与第 1 秒内位移之比为（　）', ['n','2n−1','n²','2n'], 1, '第 n 秒内 ∝ (2n−1)。'],
+  ['初速为零匀加速，通过连续相等位移所用时间之比约为（　）', ['1:2:3','1:√2:√3','1:(√2−1):(√3−√2)','1:3:5'], 2, '位移等分连续段时间比 1:(√2−1):(√3−√2)。'],
+  ['匀变速中相邻相等时间 T 的位移差 Δx 等于（　）', ['aT','aT²','vT²','2aT'], 1, 'Δx=aT²，是逐差法基础。'],
+  ['纸带相邻计数点位移差恒为 2 cm，T=0.1 s，则 a=（　）', ['2 m/s²','20 m/s²','0.2 m/s²','200 m/s²'], 0, 'a=Δx/T²=0.02/0.01=2 m/s²。'],
+  ['竖直上抛运动可看作（　）', ['自由落体','自由落体的逆过程','匀速运动','平抛'], 1, '逆向思维：上抛=自由落体逆过程。'],
+  ['汽车以 20 m/s 匀速，同处一车从静止以 5 m/s² 匀加速追，何时追上（　）', ['2 s','4 s','8 s','10 s'], 2, '½·5·t²=20t → t=8 s。'],
+  ['上题追上时汽车速度为（　）', ['20 m/s','40 m/s','60 m/s','80 m/s'], 1, 'v=at=5×8=40 m/s=2v。']
+];
+var gAns = new Array(quiz.length).fill(-1);
+(function(){
+  var box = document.getElementById('gameList');
+  quiz.forEach(function(q, idx){
+    var div = document.createElement('div'); div.className='q';
+    var html = '<div class="stem">'+(idx+1)+'. '+q[0]+'</div><div class="opts">';
+    q[1].forEach(function(o, oi){
+      html += '<div class="opt" data-q="'+idx+'" data-o="'+oi+'">'+o+'</div>';
+    });
+    html += '</div><div class="exp" id="exp'+idx+'"></div>';
+    div.innerHTML = html;
+    box.appendChild(div);
+  });
+  box.addEventListener('click', function(e){
+    var t = e.target;
+    if(t.classList.contains('opt')){
+      var qi = +t.getAttribute('data-q'), oi = +t.getAttribute('data-o');
+      var opts = box.querySelectorAll('.opt[data-q="'+qi+'"]');
+      opts.forEach(function(o){o.classList.remove('sel','ok','no');});
+      t.classList.add('sel');
+      gAns[qi] = oi;
+      var exp = document.getElementById('exp'+qi);
+      if(oi === quiz[qi][2]){
+        t.classList.add('ok'); exp.style.display='block';
+        exp.innerHTML = '✓ 正确。'+quiz[qi][3];
+      } else {
+        t.classList.add('no'); exp.style.display='block';
+        exp.innerHTML = '✗ 错。正确答案：'+quiz[qi][1][quiz[qi][2]]+'。'+quiz[qi][3];
+        var right = box.querySelector('.opt[data-q="'+qi+'"][data-o="'+quiz[qi][2]+'"]');
+        if(right) right.classList.add('ok');
+      }
+      gameScore();
+    }
+  });
+})();
+function gameScore(){
+  var c = 0; for(var i=0;i<quiz.length;i++){ if(gAns[i]===quiz[i][2]) c++; }
+  document.getElementById('gameScore').innerHTML = '已答对 '+c+' / '+quiz.length;
+}
+function gameReset(){
+  gAns = new Array(quiz.length).fill(-1);
+  document.querySelectorAll('#gameList .opt').forEach(function(o){o.classList.remove('sel','ok','no');});
+  document.querySelectorAll('#gameList .exp').forEach(function(e){e.style.display='none';});
+  document.getElementById('gameScore').innerHTML='';
+}
+
+/* 初始绘制 */
+drawTape();
+drawRatio();
+</script>
+</body>
+</html>
