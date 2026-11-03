@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电路故障实验室 · 理化催化剂</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC",sans-serif;
+         background:#F5F6FA; color:#2B2F3A; line-height:1.6; padding:16px 12px 40px; }
+  .wrap { max-width:780px; margin:0 auto; }
+  h1 { font-size:21px; color:#2A3F8F; letter-spacing:.5px; }
+  h1 span { color:#4ECDC4; }
+  .sub { font-size:13px; color:#7A8090; margin-top:4px; }
+  .tabs { display:flex; gap:6px; margin:16px 0 12px; overflow-x:auto; padding-bottom:2px; }
+  .tab { flex:0 0 auto; padding:8px 14px; font-size:14px; border-radius:20px; background:#fff;
+         color:#5B4B8A; border:1.5px solid #E2E4EC; cursor:pointer; white-space:nowrap; transition:.18s; }
+  .tab.on { background:#2A3F8F; color:#fff; border-color:#2A3F8F; font-weight:700; }
+  .page { display:none; } .page.on { display:block; }
+
+  .card { background:#fff; border-radius:14px; padding:14px; margin-bottom:12px;
+          box-shadow:0 2px 10px rgba(42,63,143,.06); }
+  canvas { width:100%; height:auto; display:block; }
+
+  .seg { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 4px; }
+  .seg button { flex:1 1 0; min-width:88px; padding:9px 6px; font-size:13px; cursor:pointer;
+    border-radius:10px; border:1.5px solid #E2E4EC; background:#fff; color:#5B4B8A;
+    font-family:inherit; transition:.18s; }
+  .seg button.on { background:#2A3F8F; border-color:#2A3F8F; color:#fff; font-weight:700; }
+  .seg button.ok { background:#4ECDC4; border-color:#4ECDC4; color:#fff; font-weight:700; }
+  .seg button.bad { background:#F4A261; border-color:#F4A261; color:#fff; font-weight:700; }
+
+  .readout { display:flex; gap:8px; margin-top:10px; }
+  .ro { flex:1; background:#F5F6FA; border-radius:10px; padding:9px 10px; text-align:center; }
+  .ro .k { font-size:12.5px; color:#7A8090; }
+  .ro .v { font-size:16px; font-weight:700; color:#2A3F8F; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .ro.zero .v { color:#9AA0AE; }
+  .ro.full .v { color:#D17B36; }
+
+  .tip { margin-top:12px; padding:11px 13px; border-radius:10px; font-size:13.5px;
+         background:#E1F5EE; border-left:4px solid #4ECDC4; color:#1F6E68; }
+  .tip.warn { background:#FAEEDA; border-left-color:#F4A261; color:#8A5320; }
+  .tip b { color:inherit; }
+
+  .q { background:#fff; border-radius:14px; padding:14px; margin-bottom:10px;
+       box-shadow:0 2px 10px rgba(42,63,143,.06); }
+  .q .stem { font-size:14.5px; font-weight:700; margin-bottom:9px; }
+  .q .stem .no { color:#4ECDC4; margin-right:6px; }
+  .q .stem .gv { display:block; margin-top:6px; padding:7px 10px; background:#F5F6FA;
+                 border-radius:8px; font-size:13.5px; font-weight:400; color:#4A5060; }
+  .opt { display:block; width:100%; text-align:left; padding:9px 12px; margin-bottom:7px;
+         font-size:14px; border-radius:9px; border:1.5px solid #E2E4EC; background:#fff;
+         color:#2B2F3A; cursor:pointer; font-family:inherit; transition:.15s; }
+  .opt.right { background:#E1F5EE; border-color:#4ECDC4; color:#1F6E68; font-weight:700; }
+  .opt.wrong { background:#FDECEA; border-color:#E06C5A; color:#A33A2A; }
+  .opt:disabled { cursor:default; }
+  .why { display:none; margin-top:8px; padding:10px 12px; border-radius:9px;
+         background:#F5F6FA; font-size:13.5px; color:#4A5060; }
+  .why.on { display:block; }
+  .score { text-align:center; font-size:15px; font-weight:700; color:#2A3F8F;
+           padding:12px; background:#ECEEFA; border-radius:12px; margin-bottom:12px; }
+  .foot { text-align:center; font-size:12px; color:#9AA0AE; margin-top:22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>电路故障实验室 <span>·</span> 谁断路，谁拿到电源电压</h1>
+  <div class="sub">点一下就能让元件「坏」掉，看三块表怎么变 —— 四种故障，一一点过就懂了</div>
+
+  <div class="tabs">
+    <div class="tab on" data-p="p1">① 故障实验台</div>
+    <div class="tab" data-p="p2">② 电表反推</div>
+    <div class="tab" data-p="p3">③ 闯关练习</div>
+  </div>
+
+  <!-- ========= 页1 ========= -->
+  <div class="page on" id="p1">
+    <div class="card">
+      <canvas id="cv" width="780" height="360"></canvas>
+      <div class="seg" id="faults">
+        <button class="on" data-m="normal">电路正常</button>
+        <button data-m="r1s">R1 短路</button>
+        <button data-m="r1o">R1 断路</button>
+        <button data-m="r2s">R2 短路</button>
+        <button data-m="r2o">R2 断路</button>
+      </div>
+      <div class="readout" id="ro"></div>
+    </div>
+    <div class="tip" id="exp">
+      <b>正常工作时</b>：R1 与 R2 串联，电流处处相等。R1 = 10 Ω、R2 = 20 Ω、电源 6 V，
+      所以电流 0.2 A，R1 分到 2 V、R2 分到 4 V（电阻大的分压多）。
+    </div>
+    <div class="tip warn">
+      <b>看的时候盯住这条</b>：谁断路，谁两端的电压就变成电源电压；谁短路，谁两端的电压就变成 0。
+      再配合电流表（断路为 0、短路变大），四种故障全能对上号。
+    </div>
+  </div>
+
+  <!-- ========= 页2 ========= -->
+  <div class="page" id="p2">
+    <div class="tip" style="margin-bottom:12px">
+      下面每题都告诉你三块表的示数（R1 = 10 Ω，R2 = 20 Ω，电源 6 V）。想一想：该是哪种故障？
+    </div>
+    <div id="qs2"></div>
+  </div>
+
+  <!-- ========= 页3 ========= -->
+  <div class="page" id="p3">
+    <div class="score" id="sc3">已答 0 / 10　·　正确 0</div>
+    <div id="qs3"></div>
+    <div class="tip">做完记得回第一页，把这十道题在实验台上复现一遍 —— 看一遍不如点一遍。</div>
+  </div>
+
+  <div class="foot">理化催化剂 · 降低活化能，加速你的成长</div>
+</div>
+
+<script>
+/* ---------------- 参数与计算 ---------------- */
+var V0 = 6, RA = 10, RB = 20;
+
+function calc(m) {
+  if (m === 'r1s') return { I: V0 / RB, U1: 0, U2: V0,
+    txt: '<b>R1 短路</b>：R1 变成了导线，电路里只剩 R2。总电阻变小 → 电流<b>变大</b>为 ' +
+         (V0 / RB).toFixed(2) + ' A；R1 两端被导线直接连通，V1 示数为 <b>0</b>；' +
+         'R2 独自承担整个电源电压，V2 示数 = <b>电源电压</b>。' };
+  if (m === 'r1o') return { I: 0, U1: V0, U2: 0,
+    txt: '<b>R1 断路</b>：电流在 R1 处断了，整条路不通 → 电流表 <b>无示数（0）</b>。' +
+         '电压表 V1 跨在断口上，一端经电源、一端经 R2 接到电源，测的其实是 <b>电源电压</b>；' +
+         'V2 与电源之间被断口隔开，示数为 <b>0</b>。' };
+  if (m === 'r2s') return { I: V0 / RA, U1: V0, U2: 0,
+    txt: '<b>R2 短路</b>：电路里只剩 R1。总电阻变小 → 电流<b>变大</b>为 ' +
+         (V0 / RA).toFixed(2) + ' A；R2 两端被导线连通，V2 示数为 <b>0</b>；' +
+         'R1 独自承担电源电压，V1 示数 = <b>电源电压</b>。' };
+  if (m === 'r2o') return { I: 0, U1: 0, U2: V0,
+    txt: '<b>R2 断路</b>：电流断了 → 电流表 <b>无示数</b>。V2 跨在断口上，测到的是 ' +
+         '<b>电源电压</b>；而 V1 与电源之间被断口隔开（它接不到电源两端），示数为 <b>0</b>。' };
+  var I = V0 / (RA + RB);
+  return { I: I, U1: I * RA, U2: I * RB,
+    txt: '<b>正常工作时</b>：R1 与 R2 串联，电流处处相等。R1 = 10 Ω、R2 = 20 Ω、电源 6 V，' +
+         '所以电流 0.20 A，R1 分到 2.00 V、R2 分到 4.00 V（电阻大的分压多）。' };
+}
+
+/* ---------------- 画图 ---------------- */
+var CV = document.getElementById('cv');
+var D = CV.getContext('2d');
+var F_NORM = '15px "Microsoft YaHei", sans-serif';
+var F_BOLD = 'bold 15px "Microsoft YaHei", sans-serif';
+
+function line(x1, y1, x2, y2, color, w) {
+  D.strokeStyle = color; D.lineWidth = w || 3;
+  D.beginPath(); D.moveTo(x1, y1); D.lineTo(x2, y2); D.stroke();
+}
+function txt(t, x, y, color, font, align) {
+  D.fillStyle = color; D.font = font || F_NORM;
+  D.textAlign = align || 'center'; D.textBaseline = 'middle';
+  D.fillText(t, x, y);
+}
+function box(x, y, w, h, fill, edge, label, lc) {
+  D.fillStyle = fill; D.fillRect(x, y, w, h);
+  D.strokeStyle = edge; D.lineWidth = 3; D.strokeRect(x, y, w, h);
+  if (label) txt(label, x + w / 2, y + h / 2, lc || edge, F_BOLD);
+}
+function circle(x, y, r, txtv, color) {
+  D.beginPath(); D.arc(x, y, r, 0, 6.28318); D.fillStyle = '#fff'; D.fill();
+  D.strokeStyle = color; D.lineWidth = 3; D.stroke();
+  txt(txtv, x, y + 1, color, 'bold 17px "Microsoft YaHei", sans-serif');
+}
+function dash(x1, y1, x2, y2, color) {
+  D.save(); D.setLineDash([6, 5]); line(x1, y1, x2, y2, color, 2); D.restore();
+}
+/* 故障标记：短路画跨接导线，断路画红色断口 */
+function markShort(x1, y1, x2, y2) {
+  D.strokeStyle = '#F4A261'; D.lineWidth = 5;
+  D.beginPath(); D.moveTo(x1, y1);
+  D.bezierCurveTo(x1, y1 - 46, x2, y2 - 46, x2, y2);
+  D.stroke();
+  txt('短路', (x1 + x2) / 2, Math.min(y1, y2) - 54, '#D17B36', 'bold 14px "Microsoft YaHei", sans-serif');
+}
+function markOpen(x1, y1, x2, y2, vert) {
+  var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  D.strokeStyle = '#fff'; D.lineWidth = 10;
+  D.beginPath(); D.moveTo(x1, y1); D.lineTo(x2, y2); D.stroke();
+  D.strokeStyle = '#E06C5A'; D.lineWidth = 4;
+  if (vert) { line(mx - 12, my - 14, mx + 12, my + 14, '#E06C5A', 4); }
+  else { line(mx - 14, my + 12, mx + 14, my - 12, '#E06C5A', 4); }
+  txt('断路', mx, vert ? my + 34 : my - 32, '#C0392B', 'bold 14px "Microsoft YaHei", sans-serif');
+}
+
+function draw(m) {
+  var r = calc(m);
+  D.clearRect(0, 0, CV.width, CV.height);
+  var L = 120, T = 130, R = 600, B = 310;
+
+  /* ---- 回路 ---- */
+  var live = (r.I > 0);
+  var wire = live ? '#2A3F8F' : '#9AA0AE';
+  line(L, T, L, B, wire); line(R, T, R, B, wire);
+  line(L, T, R, T, wire); line(L, B, R, B, wire);
+
+  /* ---- R1（上边） ---- */
+  var x1 = 250, x2 = 360;
+  D.fillStyle = '#fff'; D.fillRect(x1, T - 18, x2 - x1, 36);
+  box(x1, T - 18, x2 - x1, 36,
+      (m === 'r1o' ? '#FDECEA' : (m === 'r1s' ? '#F5F6FA' : '#E1F5EE')),
+      (m === 'r1o' ? '#C0392B' : (m === 'r1s' ? '#9AA0AE' : '#2E9E96')),
+      'R1  10Ω', (m === 'r1o' ? '#C0392B' : (m === 'r1s' ? '#7A8090' : '#2E9E96')));
+  if (m === 'r1s') markShort(x1, T, x2, T);
+  if (m === 'r1o') markOpen(x1, T, x2, T, false);
+
+  /* ---- R2（右边） ---- */
+  var y1 = 175, y2 = 275;
+  D.fillStyle = '#fff'; D.fillRect(R - 18, y1, 36, y2 - y1);
+  box(R - 18, y1, 36, y2 - y1,
+      (m === 'r2o' ? '#FDECEA' : (m === 'r2s' ? '#F5F6FA' : '#FAEEDA')),
+      (m === 'r2o' ? '#C0392B' : (m === 'r2s' ? '#9AA0AE' : '#D17B36')),
+      'R2', (m === 'r2o' ? '#C0392B' : (m === 'r2s' ? '#7A8090' : '#D17B36')));
+  txt('20Ω', R + 34, (y1 + y2) / 2, '#7A8090', '13px "Microsoft YaHei", sans-serif');
+  if (m === 'r2s') markShort(R, y1, R, y2);
+  if (m === 'r2o') markOpen(R, y1, R, y2, true);
+
+  /* ---- 电源（下边） ---- */
+  D.fillStyle = '#fff'; D.fillRect(320, B - 14, 80, 28);
+  box(320, B - 14, 80, 28, '#fff', '#2A3F8F', '6V', '#2A3F8F');
+  txt('电源 U（不变）', 360, B + 32, '#2B2F3A', '13px "Microsoft YaHei", sans-serif');
+
+  /* ---- 电流表 ---- */
+  circle(L, 220, 23, 'A', live ? '#2A3F8F' : '#9AA0AE');
+  txt(r.I.toFixed(2) + ' A', L, 262, live ? '#2A3F8F' : '#C0392B', F_BOLD);
+
+  /* ---- V1（测 R1） ---- */
+  circle(305, 62, 23, 'V', (m === 'r1o' || m === 'r2s') ? '#D17B36' : '#2E9E96');
+  txt('V1', 348, 66, (m === 'r1o' || m === 'r2s') ? '#D17B36' : '#2E9E96', F_BOLD, 'left');
+  dash(x1 + 8, 80, x1 + 8, T - 20, (m === 'r1o' || m === 'r2s') ? '#D17B36' : '#2E9E96');
+  dash(x2 - 8, 80, x2 - 8, T - 20, (m === 'r1o' || m === 'r2s') ? '#D17B36' : '#2E9E96');
+  txt(r.U1.toFixed(2) + ' V', 305, 104, r.U1 === 0 ? '#9AA0AE' : '#D17B36', F_BOLD);
+
+  /* ---- V2（测 R2） ---- */
+  circle(690, 225, 23, 'V', (m === 'r2o' || m === 'r1s') ? '#D17B36' : '#2E9E96');
+  txt('V2', 733, 229, (m === 'r2o' || m === 'r1s') ? '#D17B36' : '#2E9E96', F_BOLD, 'left');
+  dash(R + 22, y1 + 10, 666, y1 + 10, '#2E9E96');
+  dash(R + 22, y2 - 10, 666, y2 - 10, '#2E9E96');
+  txt(r.U2.toFixed(2) + ' V', 690, 267, r.U2 === 0 ? '#9AA0AE' : '#D17B36', F_BOLD);
+
+  /* ---- 电流方向提示 ---- */
+  var msg = live ? '→ 有电流，方向如回路所示' : '✕ 电流为 0：某处断路了';
+  txt(msg, 360, 344, live ? '#2E9E96' : '#C0392B', F_BOLD);
+}
+
+function update(m) {
+  var r = calc(m);
+  draw(m);
+  document.getElementById('exp').innerHTML = r.txt;
+  function cell(k, v, cls) {
+    return '<div class="ro ' + (cls || '') + '"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+  }
+  document.getElementById('ro').innerHTML =
+    cell('电流表 A', r.I === 0 ? '0（无示数）' : r.I.toFixed(2) + ' A', r.I === 0 ? 'zero' : '') +
+    cell('电压表 V1（测 R1）', r.U1 === 0 ? '0' : (r.U1 >= V0 ? '6.00 V' : r.U1.toFixed(2) + ' V'),
+         r.U1 === 0 ? 'zero' : (r.U1 >= V0 ? 'full' : '')) +
+    cell('电压表 V2（测 R2）', r.U2 === 0 ? '0' : (r.U2 >= V0 ? '6.00 V' : r.U2.toFixed(2) + ' V'),
+         r.U2 === 0 ? 'zero' : (r.U2 >= V0 ? 'full' : ''));
+}
+
+/* ---------------- 页2：电表反推 ---------------- */
+var Q2 = [
+  { g: ['A：0.30 A（变大）', 'V1：0', 'V2：6.00 V'],
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 0,
+    w: 'A 有示数 → 是短路。短路时「哪块 V 为 0，它并联的元件就短」→ V1 为 0 → R1 短路。' },
+  { g: ['A：0.60 A（变大）', 'V1：6.00 V', 'V2：0'],
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 1,
+    w: 'A 有示数 → 短路。V2 为 0 → R2 短路。（此时只剩 R1，电流 6/10 = 0.60 A，对得上。）' },
+  { g: ['A：0（无示数）', 'V1：6.00 V', 'V2：0'],
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 2,
+    w: 'A 无示数 → 断路。断路时「哪块 V 有示数，它并联的元件就断」→ V1 有示数 → R1 断路。' },
+  { g: ['A：0（无示数）', 'V1：0', 'V2：6.00 V'],
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 3,
+    w: 'A 无示数 → 断路。V2 有示数（跨在断口上，测到电源电压）→ R2 断路。' },
+  { g: ['A：0.20 A（正常）', 'V1：2.00 V', 'V2：4.00 V'],
+    o: ['电路正常', 'R1 短路', 'R2 断路', 'R1 断路'], a: 0,
+    w: '电流 0.20 A 正是 6 V ÷ 30 Ω；V1 : V2 = 2 : 4 = R1 : R2，分压正常 —— 电路完好。' },
+  { g: ['灯 L 不发光', 'A：0（无示数）', 'V（并联在 L 两端）：接近电源电压'],
+    o: ['L 短路', 'L 断路', 'R 短路', 'R 断路'], a: 1,
+    w: 'A 无示数 → 断路；V 并联在 L 两端且有示数（≈电源电压）→ L 断路。若 L 短路，灯不亮但电流表会有示数，这里不符合。' }
+];
+
+/* ---------------- 页3：闯关 ---------------- */
+var Q3 = [
+  { s: '串联电路中，电流表无示数，电压表 V1（测 R1）有示数且等于电源电压。故障是？',
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 2,
+    w: 'A 无示数 → 断路；断路时哪块 V 有示数，哪块并联的元件就断 → R1 断路。' },
+  { s: '串联电路中，电流表示数变大，V2（测 R2）示数为 0。故障是？',
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 1,
+    w: 'A 变大 → 短路；短路时哪块 V 为 0，哪块并联的元件就短 → R2 短路。' },
+  { s: '发生断路时，断路那个元件两端的电压是多少？',
+    o: ['0', '电源电压', '电源电压的一半', '无法判断'], a: 1,
+    w: '断路处电流为 0，电压表跨在断口上，两端分别接到电源两极，所以示数 = 电源电压。这是本节最核心的一条。' },
+  { s: '发生短路时，被短路那个元件两端的电压是多少？',
+    o: ['0', '电源电压', '电源电压的一半', '与阻值成正比'], a: 0,
+    w: '被短路的元件两端被导线直接连通，电压必定为 0。同时对串联的另一个元件来说，它独自承担了整个电源电压。' },
+  { s: '在电路分析中，电压表的电阻应当看作？',
+    o: ['零（当导线）', '无穷大（当断路）', '等于被测电阻', '不确定'], a: 1,
+    w: '电压表内阻极大，几乎不通电，所以当断路看；而电流表内阻极小，要当导线看。这是所有故障分析的基础设定。' },
+  { s: '用一根导线并联在某元件两端，发现灯亮了。说明？',
+    o: ['该元件短路了', '该元件断路了', '电源坏了', '另一个元件断路了'], a: 1,
+    w: '导线把断口接通了，电路恢复，所以被并联的那处原本是断路。注意：绝不能用导线去并联电源两端。' },
+  { s: '把电压表并联到某元件两端，示数为 0。最可能说明？',
+    o: ['该元件断路', '该元件短路，或电压表接不到电源', '电源电压太高', '该元件正常'], a: 1,
+    w: '该处断路时电压表会有示数（≈电源电压）；示数为 0 说明该处被短路了，或者电压表与电源之间是断开的。' },
+  { s: '串联电路 R1、R2，闭合开关后 A 无示数、V1 有示数（=电源电压）、V2 为 0。若仅有一处故障，故障是？',
+    o: ['R1 短路', 'R2 短路', 'R1 断路', 'R2 断路'], a: 2,
+    w: 'A 无示数 → 断路；V1 有示数 → R1 断路。V2 为 0 也吻合（它接不到电源两端了）。' },
+  { s: '用三节新干电池（共 4.5 V）做实验，电压表并联在 R1 两端，闭合开关后示数为 4.5 V。可能故障是？',
+    o: ['只有 R1 短路', 'R1 断路 或 R2 短路', '只有 R2 断路', 'R1 断路 或 R2 断路'], a: 1,
+    w: '示数接近电源电压，说明电压表测到的就是电源电压：可能是 R1 断路（跨在断口上），也可能是 R2 短路（R1 独自承担全部电压）。这两种要靠电流表区分。' },
+  { s: '接到上题，若要区分「R1 断路」和「R2 短路」，最直接的是看哪块表？',
+    o: ['电流表：有示数是短路，无示数是断路', '电压表 V1 的示数', '换一个更亮的灯', '无法区分'],
+    a: 0,
+    w: 'R2 短路 → 电路仍是通路 → 电流表有示数（而且变大）；R1 断路 → 电流表为 0。所以电流表是区分短路与断路的「第一道分诊」。' }
+];
+
+function renderList(hostId, qs, prefix, withScore) {
+  var host = document.getElementById(hostId);
+  host.innerHTML = qs.map(function (q, i) {
+    var stem = '<div class="stem"><span class="no">' + (i + 1) + '.</span>' +
+      (q.s || '电路中仅有一处故障，根据下列电表示数判断故障：');
+    if (q.g) {
+      stem += '<span class="gv">' + q.g.join('　｜　') + '</span>';
+    }
+    stem += '</div>';
+    return '<div class="q">' + stem +
+      q.o.map(function (t, k) {
+        return '<button class="opt" data-q="' + i + '" data-k="' + k + '" data-prefix="' + prefix +
+          '">' + 'ABCD'[k] + '．' + t + '</button>';
+      }).join('') +
+      '<div class="why" id="' + prefix + 'w' + i + '"><b>为什么：</b>' + q.w + '</div></div>';
+  }).join('');
+  var st = { n: 0, ok: 0 };
+  host.querySelectorAll('.opt').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var qi = +btn.dataset.q, ki = +btn.dataset.k, box = btn.parentElement;
+      if (box.dataset.done) return;
+      box.dataset.done = '1';
+      var q = qs[qi], opts = box.querySelectorAll('.opt');
+      opts.forEach(function (b) { b.disabled = true; });
+      opts[q.a].classList.add('right');
+      if (ki !== q.a) btn.classList.add('wrong'); else st.ok++;
+      st.n++;
+      document.getElementById(prefix + 'w' + qi).classList.add('on');
+      if (withScore) {
+        document.getElementById('sc3').textContent =
+          '已答 ' + st.n + ' / ' + qs.length + '　·　正确 ' + st.ok;
+      }
+    });
+  });
+}
+
+/* ---------------- 绑定 ---------------- */
+document.querySelectorAll('.tab').forEach(function (t) {
+  t.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('on'); });
+    document.querySelectorAll('.page').forEach(function (x) { x.classList.remove('on'); });
+    t.classList.add('on');
+    document.getElementById(t.dataset.p).classList.add('on');
+  });
+});
+var curMode = 'normal';
+document.querySelectorAll('#faults button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('#faults button').forEach(function (x) { x.className = ''; });
+    b.className = 'on';
+    curMode = b.dataset.m;
+    update(curMode);
+  });
+});
+
+update('normal');
+renderList('qs2', Q2, 'a', false);
+renderList('qs3', Q3, 'b', true);
+</script>
+</body>
+</html>
